@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+./gradlew spotlessApply > /dev/null
+
+git add -u
