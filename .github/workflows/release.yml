@@ -1,0 +1,90 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+#      - name: Check version
+#        run: |
+#          VERSION_TAG=${{ github.ref_name }}
+#          VERSION_TAG=${VERSION_TAG#v}
+#          PROJECT_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
+#          if [[ "$PROJECT_VERSION" == "$VERSION_TAG" ]]; then
+#            echo "Version match: tag $VERSION_TAG matches project version $PROJECT_VERSION, proceeding with release"
+#          else
+#            echo "Version mismatch: tag $VERSION_TAG does not match project version $PROJECT_VERSION"
+#            exit 1
+#          fi
+
+      - name: Build
+        run: |
+          ./gradlew build --no-daemon
+
+  compile-native-image:
+    name: Compile native image on ${{ matrix.os }}
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    needs: [ build ]
+    strategy:
+      matrix:
+        os: [ macos-latest, windows-latest, ubuntu-latest ]
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Setup GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: '17'
+          distribution: 'graalvm'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Build native image
+        run: |
+          ./gradlew :jarinker-cli:nativeCompile
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: 'jarinker-cli-${{ runner.os }}'
+          path: |
+            jarinker-cli/build/native/nativeCompile/jarinker
+            jarinker-cli/build/native/nativeCompile/jarinker.exe
+
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    needs: [ compile-native-image ]
+    steps:
+      - name: Download binaries (Linux)
+        uses: actions/download-artifact@v4
+        with:
+          name: 'jarinker-cli-Linux'
+
+      - name: Download binaries (macOS)
+        uses: actions/download-artifact@v4
+        with:
+          name: 'jarinker-cli-macOS'
+
+      - name: Download binaries (Windows)
+        uses: actions/download-artifact@v4
+        with:
+          name: 'jarinker-cli-Windows'
+
+      - name: Set up JReleaser
+        uses: jreleaser/releaser-action@v2
+        with:
+          args: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PROJECT_VERSION: ${{ github.ref_name }}

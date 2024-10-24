@@ -1,3 +1,20 @@
+
 dependencies {
 
+    implementation("org.ow2.asm:asm:${asmVersion}")
+    implementation("org.ow2.asm:asm-tree:${asmVersion}")
+
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+}
+
+apply plugin: "com.gradleup.shadow"
+
+shadowJar {
+//    archiveBaseName.set("asm-all")
+    archiveClassifier.set("")
+//    archiveVersion.set('')
+
+    relocate("org.objectweb.asm", "jarinker.asm")
+
+//    destinationDirectory = file("shadow")
 }

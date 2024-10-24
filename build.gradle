@@ -1,11 +1,19 @@
 plugins {
-    id("com.diffplug.spotless") version "${spotlessVersion}" apply false
-    id("com.github.spotbugs") version "${spotbugsVersion}" apply false
+    id "com.diffplug.spotless" version "${spotlessVersion}" apply false
+    id "com.github.spotbugs" version "${spotbugsVersion}" apply false
+    id "com.gradleup.shadow" version "${shadowPluginVersion}" apply false
+    id "org.graalvm.buildtools.native" version "${graalvmBuildToolsVersion}" apply false
 }
 
 allprojects {
 
+    apply plugin: "java"
     apply plugin: "java-library"
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
     repositories {
         mavenCentral()
@@ -16,6 +24,11 @@ allprojects {
         annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
         testCompileOnly("org.projectlombok:lombok:${lombokVersion}")
         testAnnotationProcessor("org.projectlombok:lombok:${lombokVersion}")
+
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.3.4") {
+            exclude(group: "org.springframework")
+            exclude(group: "org.springframework.boot")
+        }
     }
 
     test {

@@ -1,0 +1,56 @@
+project:
+  name: jarinker
+  version: '{{ PROJECT_VERSION }}'
+  description: 'A simple CLI tool to shrink JARs'
+  authors:
+    - 'llw599502537@gmail.com'
+
+release:
+  github:
+    owner: DanielLiu1123
+    name: jarinker
+    token: '{{ GITHUB_TOKEN }}'
+    draft: true
+    # prerelease: true
+
+distributions:
+  jarinker-cli:
+    active: always
+    artifactId: jarinker-cli
+    version: '{{ PROJECT_VERSION }}'
+    type: binary
+    executable:
+      name: jarinker
+    artifacts: # see .github/workflows/release.yml:59
+      - path: 'jarinker-cli-Linux/jarinker'
+        platform: 'linux-x86_64'
+      - path: 'jarinker-cli-macOS/jarinker'
+        platform: 'osx-x86_64'
+      - path: 'jarinker-cli-Windows/jarinker.exe'
+        platform: 'windows-x86_64'
+
+packagers:
+  zip:
+    active: always
+    # components:
+    #   - distribution: jarinker-cli
+    #     executable:
+    #       name: jarinker
+  tar:
+    active: always
+
+changelog:
+  enabled: true
+  sort: desc
+  categories:
+    - title: '🐛 Bug Fixes'
+      labels: [ 'bug' ]
+    - title: '✨ New Features'
+      labels: [ 'enhancement', 'feature' ]
+  contributors:
+    enabled: true
+
+# announce:
+#   twitter:
+#     enabled: true
+#     status: 'Released {{projectName}} {{projectVersion}}! Check it out: {{releaseUrl}}'

@@ -1,0 +1,33 @@
+plugins {
+    id 'org.graalvm.buildtools.native'
+}
+
+dependencies {
+
+    implementation(project(":jarinker-core"))
+    implementation("info.picocli:picocli:${picocliVersion}")
+    annotationProcessor("info.picocli:picocli-codegen:${picocliVersion}")
+
+    // https://github.com/GoodforGod/graalvm-hint
+    annotationProcessor("io.goodforgod:graalvm-hint-processor:${graalvmHintProcessor}")
+    compileOnly("io.goodforgod:graalvm-hint-annotations:${graalvmHintProcessor}")
+
+    testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+}
+
+compileJava {
+    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
+}
+
+// https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-options
+graalvmNative {
+    testSupport = false
+    binaries {
+        main {
+            imageName = "jarinker"
+            mainClass = "jarinker.cli.Main"
+            verbose = true
+            sharedLibrary = false
+        }
+    }
+}

@@ -1,5 +1,6 @@
 rootProject.name = "jarinker"
 
+include(":jarinker-cli")
 include(":jarinker-core")
 
 new File("${rootDir}/.githooks").eachFile(groovy.io.FileType.FILES) {
