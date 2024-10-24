@@ -87,8 +87,14 @@ jobs:
         with:
           name: 'jarinker-cli-Windows'
 
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+
       - name: Set up JReleaser
-        uses: jreleaser/releaser-action@v2
+        uses: jreleaser/release-action@v2
         with:
           args: release
         env:
