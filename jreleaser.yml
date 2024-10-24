@@ -1,6 +1,6 @@
 project:
   name: jarinker
-  version: '{{ PROJECT_VERSION }}'
+  version: '{{ env.PROJECT_VERSION }}'
   description: 'A simple CLI tool to shrink JARs'
   authors:
     - 'Freeman'

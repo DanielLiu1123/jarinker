@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -68,54 +71,27 @@ jobs:
             jarinker-cli/build/native/nativeCompile/jarinker.exe
 
   release:
-    name: Release
+    name: Create GitHub Release
     runs-on: ubuntu-latest
     needs: [ compile-native-image ]
     steps:
-      - name: Download binaries (Linux)
-        uses: actions/download-artifact@v4
-        with:
-          name: 'jarinker-cli-Linux'
-
-      - name: Download binaries (macOS)
-        uses: actions/download-artifact@v4
-        with:
-          name: 'jarinker-cli-macOS'
-
-      - name: Download binaries (Windows)
-        uses: actions/download-artifact@v4
-        with:
-          name: 'jarinker-cli-Windows'
-
       - name: Check out the repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up JDK
-        uses: actions/setup-java@v3
+      - name: Download binaries
+        uses: actions/download-artifact@v4
         with:
-          java-version: '17'
-          distribution: 'corretto'
+          name: 'jarinker-cli-*'
 
-      - name: Set up ENV
-        run: |
-          tag=${{ github.ref_name }}
-          tag=${tag#v}
-          echo "PROJECT_VERSION=${tag}" >> $GITHUB_ENV
+      - name: Show downloaded files
+        run: ls -l jarinker-cli-*
 
-      - name: Set up JReleaser
-        uses: jreleaser/release-action@v2
+      - name: Create release
+        uses: softprops/action-gh-release@v2
         with:
-          arguments: full-release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: JReleaser output
-        uses: actions/upload-artifact@v4
-        with:
-          retention-days: 1
-          name: jreleaser-release
-          path: |
-            out/jreleaser/trace.log
-            out/jreleaser/output.properties
+          generate_release_notes: true
+          draft: true
+          files: |
+            jarinker-cli-Linux/jarinker
+            jarinker-cli-macOS/jarinker
+            jarinker-cli-Windows/jarinker.exe
