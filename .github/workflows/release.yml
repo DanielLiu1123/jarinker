@@ -87,6 +87,11 @@ jobs:
         with:
           name: 'jarinker-cli-Windows'
 
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Set up JDK
         uses: actions/setup-java@v3
         with:
@@ -96,7 +101,16 @@ jobs:
       - name: Set up JReleaser
         uses: jreleaser/release-action@v2
         with:
-          args: release
+          arguments: full-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROJECT_VERSION: ${{ github.ref_name }}
+
+      - name: JReleaser output
+        uses: actions/upload-artifact@v4
+        with:
+          retention-days: 1
+          name: jreleaser-release
+          path: |
+            out/jreleaser/trace.log
+            out/jreleaser/output.properties
