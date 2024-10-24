@@ -27,17 +27,17 @@ public class ShrinkCommand implements Callable<Integer> {
             description = "Source paths")
     private List<Path> sources = new ArrayList<>();
 
-    @Option(
-            names = {"-d", "--dependencies"},
-            type = Path.class,
-            description = "Dependency paths")
-    private List<Path> dependencies = new ArrayList<>();
-
-    @Option(
-            names = {"-o", "--output"},
-            type = Path.class,
-            description = "Output path")
-    private Path output;
+    //    @Option(
+    //            names = {"-d", "--dependencies"},
+    //            type = Path.class,
+    //            description = "Dependency paths")
+    //    private List<Path> dependencies = new ArrayList<>();
+    //
+    //    @Option(
+    //            names = {"-o", "--output"},
+    //            type = Path.class,
+    //            description = "Output path")
+    //    private Path output;
 
     @Override
     public Integer call() throws Exception {
