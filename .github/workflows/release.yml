@@ -13,21 +13,27 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-#      - name: Check version
-#        run: |
-#          VERSION_TAG=${{ github.ref_name }}
-#          VERSION_TAG=${VERSION_TAG#v}
-#          PROJECT_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
-#          if [[ "$PROJECT_VERSION" == "$VERSION_TAG" ]]; then
-#            echo "Version match: tag $VERSION_TAG matches project version $PROJECT_VERSION, proceeding with release"
-#          else
-#            echo "Version mismatch: tag $VERSION_TAG does not match project version $PROJECT_VERSION"
-#            exit 1
-#          fi
+      #      - name: Check version
+      #        run: |
+      #          VERSION_TAG=${{ github.ref_name }}
+      #          VERSION_TAG=${VERSION_TAG#v}
+      #          PROJECT_VERSION=$(grep "^version=" gradle.properties | cut -d'=' -f2)
+      #          if [[ "$PROJECT_VERSION" == "$VERSION_TAG" ]]; then
+      #            echo "Version match: tag $VERSION_TAG matches project version $PROJECT_VERSION, proceeding with release"
+      #          else
+      #            echo "Version mismatch: tag $VERSION_TAG does not match project version $PROJECT_VERSION"
+      #            exit 1
+      #          fi
+
+      - name: Set up JDK
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'corretto'
+          cache: 'gradle'
 
       - name: Build
-        run: |
-          ./gradlew build --no-daemon
+        run: ./gradlew build --no-daemon --stacktrace
 
   compile-native-image:
     name: Compile native image on ${{ matrix.os }}
