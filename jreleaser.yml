@@ -3,7 +3,7 @@ project:
   version: '{{ PROJECT_VERSION }}'
   description: 'A simple CLI tool to shrink JARs'
   authors:
-    - 'llw599502537@gmail.com'
+    - 'Freeman'
 
 release:
   github:
@@ -11,14 +11,14 @@ release:
     name: jarinker
     token: '{{ GITHUB_TOKEN }}'
     draft: true
+    overwrite: true
     # prerelease: true
 
 distributions:
   jarinker-cli:
-    active: always
-    artifactId: jarinker-cli
-    version: '{{ PROJECT_VERSION }}'
-    type: binary
+    active: ALWAYS
+    type: BINARY
+    stereotype: CLI
     executable:
       name: jarinker
     artifacts: # see .github/workflows/release.yml:59
@@ -39,16 +39,16 @@ packagers:
   tar:
     active: always
 
-changelog:
-  enabled: true
-  sort: desc
-  categories:
-    - title: '🐛 Bug Fixes'
-      labels: [ 'bug' ]
-    - title: '✨ New Features'
-      labels: [ 'enhancement', 'feature' ]
-  contributors:
-    enabled: true
+#changelog:
+#  enabled: true
+#  sort: desc
+#  categories:
+#    - title: '🐛 Bug Fixes'
+#      labels: [ 'bug' ]
+#    - title: '✨ New Features'
+#      labels: [ 'enhancement', 'feature' ]
+#  contributors:
+#    enabled: true
 
 # announce:
 #   twitter:
