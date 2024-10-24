@@ -29,15 +29,15 @@ distributions:
       - path: 'jarinker-cli-Windows/jarinker.exe'
         platform: 'windows-x86_64'
 
-packagers:
-  zip:
-    active: always
-    # components:
-    #   - distribution: jarinker-cli
-    #     executable:
-    #       name: jarinker
-  tar:
-    active: always
+#packagers:
+#  zip:
+#    active: always
+#    # components:
+#    #   - distribution: jarinker-cli
+#    #     executable:
+#    #       name: jarinker
+#  tar:
+#    active: always
 
 #changelog:
 #  enabled: true
