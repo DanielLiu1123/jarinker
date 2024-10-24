@@ -65,7 +65,7 @@ jobs:
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
-          name: 'jarinker-cli-${{ runner.os }}'
+          name: 'jarinker-cli-${{ matrix.os }}'
           path: |
             jarinker-cli/build/native/nativeCompile/jarinker
             jarinker-cli/build/native/nativeCompile/jarinker.exe
@@ -81,7 +81,7 @@ jobs:
       - name: Download binaries
         uses: actions/download-artifact@v4
         with:
-          name: 'jarinker-cli-*'
+          pattern: 'jarinker-cli-*'
 
       - name: Show downloaded files
         run: ls -l jarinker-cli-*
@@ -92,6 +92,6 @@ jobs:
           generate_release_notes: true
           draft: true
           files: |
-            jarinker-cli-Linux/jarinker
-            jarinker-cli-macOS/jarinker
-            jarinker-cli-Windows/jarinker.exe
+            jarinker-cli-linux-latest/jarinker
+            jarinker-cli-macos-latest/jarinker
+            jarinker-cli-windows-latest/jarinker.exe
