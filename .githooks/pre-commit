@@ -1,5 +1,11 @@
 #!/usr/bin/env bash
 
+set -e
+
+# Keep the version in the CLI in sync with the version in the gradle.properties file
+VERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
+perl -pi -e "s/VERSION = \".*\"/VERSION = \"$VERSION\"/" jarinker-cli/src/main/java/jarinker/cli/Main.java
+
 ./gradlew spotlessApply > /dev/null
 
 git add -u
