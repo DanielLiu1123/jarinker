@@ -86,10 +86,13 @@ jobs:
       - name: Show downloaded files
         run: ls -l jarinker-cli-*
 
+      - name: Extract tag
+        run: |
+          tag=${GITHUB_REF#refs/tags/v}
+          echo "TAG=${tag}" >> $GITHUB_ENV
+
       - name: Prepare zipped binaries
         run: |
-          
-          echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
           
           mkdir -p zipped
 
