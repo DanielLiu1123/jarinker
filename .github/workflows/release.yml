@@ -86,12 +86,31 @@ jobs:
       - name: Show downloaded files
         run: ls -l jarinker-cli-*
 
-      - name: Create release
+      - name: Prepare zipped binaries
+        run: |
+          
+          echo "TAG=${GITHUB_REF#refs/tags/v}" >> $GITHUB_ENV
+          
+          mkdir -p zipped
+
+          mkdir -p temp/linux
+          mv jarinker-cli-ubuntu-latest/jarinker temp/linux/jarinker
+          zip -j zipped/jarinker-linux-${{ env.TAG }}.zip temp/linux/jarinker
+
+          mkdir -p temp/macos
+          mv jarinker-cli-macos-latest/jarinker temp/macos/jarinker
+          zip -j zipped/jarinker-macos-${{ env.TAG }}.zip temp/macos/jarinker
+
+          mkdir -p temp/windows
+          mv jarinker-cli-windows-latest/jarinker.exe temp/windows/jarinker.exe
+          zip -j zipped/jarinker-windows-${{ env.TAG }}.zip temp/windows/jarinker.exe
+
+      - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           draft: true
           files: |
-            jarinker-cli-linux-latest/jarinker
-            jarinker-cli-macos-latest/jarinker
-            jarinker-cli-windows-latest/jarinker.exe
+            zipped/jarinker-linux-${{ env.TAG }}.zip
+            zipped/jarinker-macos-${{ env.TAG }}.zip
+            zipped/jarinker-windows-${{ env.TAG }}.zip
