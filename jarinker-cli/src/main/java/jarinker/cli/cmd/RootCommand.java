@@ -8,7 +8,6 @@ import picocli.CommandLine.Spec;
  * Do not change version property, it will be replaced by gradle.properties:2
  *
  * @author Freeman
- * @since 2024/10/15
  */
 @Command(name = "jarinker", mixinStandardHelpOptions = true, version = "0.0.1")
 public class RootCommand implements Runnable {

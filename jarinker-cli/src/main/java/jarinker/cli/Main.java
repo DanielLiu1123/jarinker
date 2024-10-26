@@ -12,8 +12,11 @@ import picocli.CommandLine;
 
 /**
  * @author Freeman
- * @since 2024/10/22
  */
+@ReflectionHint(
+        types = AutoComplete.GenerateCompletion.class,
+        value = {ALL_DECLARED, ALL_PUBLIC
+        }) // for GenerateCompletion, picocli only generate graalvm reflection config for "your own" commands
 public class Main {
 
     public static void main(String[] args) {
@@ -25,10 +28,4 @@ public class Main {
 
         System.exit(rootCmd.execute(args));
     }
-
-    @ReflectionHint(
-            types = AutoComplete.GenerateCompletion.class,
-            value = {ALL_DECLARED, ALL_PUBLIC
-            }) // for GenerateCompletion, picocli only generate graalvm reflection config for "your own" commands
-    static class ReflectionHit {}
 }
