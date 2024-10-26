@@ -19,7 +19,7 @@ public class Main {
     public static void main(String[] args) {
 
         var rootCmd = new CommandLine(new RootCommand())
-                .addSubcommand(new AutoComplete.GenerateCompletion())
+                .addSubcommand("completion", new AutoComplete.GenerateCompletion())
                 .addSubcommand(new ShrinkCommand())
                 .addSubcommand(new ScanCommand());
 
