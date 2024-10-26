@@ -1,16 +1,16 @@
 package jarinker.cli.cmd;
 
-import jarinker.cli.Main;
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 /**
+ * Do not change version property, it will be replaced by gradle.properties:2
+ *
  * @author Freeman
  * @since 2024/10/15
  */
-@Command(name = "jarinker", mixinStandardHelpOptions = true, versionProvider = RootCommand.VersionProvider.class)
+@Command(name = "jarinker", mixinStandardHelpOptions = true, version = "0.0.1")
 public class RootCommand implements Runnable {
 
     @Spec
@@ -20,12 +20,5 @@ public class RootCommand implements Runnable {
     public void run() {
         // Show --help if no subcommand/options are provided
         spec.commandLine().usage(System.out);
-    }
-
-    static final class VersionProvider implements CommandLine.IVersionProvider {
-        @Override
-        public String[] getVersion() {
-            return new String[] {"Jarinker " + Main.VERSION};
-        }
     }
 }
