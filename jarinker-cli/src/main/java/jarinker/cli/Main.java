@@ -21,9 +21,9 @@ public class Main {
     public static void main(String[] args) {
 
         var rootCmd = new CommandLine(new RootCommand())
-                .addSubcommand("completion", new AutoComplete.GenerateCompletion())
-                .addSubcommand("shrink", new ShrinkCommand())
-                .addSubcommand("scan", new ScanCommand());
+                .addSubcommand(new AutoComplete.GenerateCompletion())
+                .addSubcommand(new ShrinkCommand())
+                .addSubcommand(new ScanCommand());
 
         System.exit(rootCmd.execute(args));
     }

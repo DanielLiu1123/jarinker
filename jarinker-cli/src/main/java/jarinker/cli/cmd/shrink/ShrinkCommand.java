@@ -14,7 +14,10 @@ import picocli.CommandLine.Option;
  * @author Freeman
  * @since 2024/10/16
  */
-@Command(mixinStandardHelpOptions = true, description = "Shrink the JAR files by removing unused classes.")
+@Command(
+        name = "shrink",
+        mixinStandardHelpOptions = true,
+        description = "Shrink the JAR files by removing unused classes.")
 public class ShrinkCommand implements Callable<Integer> {
 
     @Option(

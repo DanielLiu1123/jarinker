@@ -13,7 +13,7 @@ import picocli.CommandLine.Option;
  * @author Freeman
  * @since 2024/10/16
  */
-@Command(mixinStandardHelpOptions = true, description = "Scan class files in paths.")
+@Command(name = "scan", mixinStandardHelpOptions = true, description = "Scan class files in paths.")
 public class ScanCommand implements Runnable {
 
     @Option(
