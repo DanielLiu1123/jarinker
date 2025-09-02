@@ -28,9 +28,9 @@ jobs:
           fi
 
       - name: Set up JDK
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '24'
           distribution: 'corretto'
           cache: 'gradle'
 
@@ -52,7 +52,7 @@ jobs:
       - name: Setup GraalVM
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: '17'
+          java-version: '24'
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'

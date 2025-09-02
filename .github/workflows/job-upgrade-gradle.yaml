@@ -19,7 +19,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '24'
           distribution: 'corretto'
 
       - name: Upgrade Gradle
