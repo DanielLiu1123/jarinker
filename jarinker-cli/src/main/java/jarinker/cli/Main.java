@@ -5,7 +5,7 @@ import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.AL
 
 import io.goodforgod.graalvm.hint.annotation.ReflectionHint;
 import jarinker.cli.cmd.RootCommand;
-import jarinker.cli.cmd.scan.ScanCommand;
+import jarinker.cli.cmd.analyze.AnalyzeCommand;
 import jarinker.cli.cmd.shrink.ShrinkCommand;
 import picocli.AutoComplete;
 import picocli.CommandLine;
@@ -23,8 +23,8 @@ public class Main {
 
         var rootCmd = new CommandLine(new RootCommand())
                 .addSubcommand("completion", new AutoComplete.GenerateCompletion())
-                .addSubcommand(new ShrinkCommand())
-                .addSubcommand(new ScanCommand());
+                .addSubcommand(new AnalyzeCommand())
+                .addSubcommand(new ShrinkCommand());
 
         System.exit(rootCmd.execute(args));
     }

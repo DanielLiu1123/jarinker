@@ -1,5 +1,6 @@
 rootProject.name = "jarinker"
 
+include(":examples:quick-start")
 include(":jarinker-cli")
 include(":jarinker-core")
 

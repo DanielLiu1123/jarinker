@@ -39,3 +39,6 @@ out/
 build
 
 .DS_Store
+
+examples/quick-start/libs/
+examples/quick-start/shrunk-libs/

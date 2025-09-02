@@ -5,11 +5,16 @@ import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 /**
+ * Root command for Jarinker CLI.
  * Do not change version property, it will be replaced by gradle.properties:2
  *
  * @author Freeman
  */
-@Command(name = "jarinker", mixinStandardHelpOptions = true, version = "0.0.1")
+@Command(
+        name = "jarinker",
+        mixinStandardHelpOptions = true,
+        version = "0.0.1",
+        description = "A tool for shrinking JAR files by removing unused classes.")
 public class RootCommand implements Runnable {
 
     @Spec

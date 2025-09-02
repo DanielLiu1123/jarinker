@@ -1,0 +1,23 @@
+plugins {
+    id "application"
+}
+
+application {
+    mainClass = "com.example.Main"
+    applicationName = "quick-start"
+}
+
+def guavaVersion = "33.4.8"
+def guavaJar = file("libs/guava-${guavaVersion}-jre.jar")
+tasks.register("downloadGuava", Exec) {
+    commandLine "curl", "--create-dirs", "-o", guavaJar.absolutePath, "https://repo1.maven.org/maven2/com/google/guava/guava/${guavaVersion}-jre/guava-${guavaVersion}-jre.jar"
+    outputs.file guavaJar
+}
+
+dependencies {
+    implementation files(guavaJar).builtBy(tasks.named("downloadGuava"))
+
+    // test if it works with shrunk jar
+//    implementation files("shrunk-libs/guava-${guavaVersion}-jre-shrunk.jar")
+}
+
