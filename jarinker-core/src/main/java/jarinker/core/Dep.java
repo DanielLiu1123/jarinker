@@ -1,28 +1,15 @@
 package jarinker.core;
 
 import java.util.LinkedHashSet;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
 /**
  * {@link Dep} represents a bytecode and its dependencies.
  *
+ * @param dependencies All dependencies of the bytecode, including Java internal classes, not including transitive dependencies,
  * @author Freeman
  * @since 2024/10/11
  */
-@Getter
-@EqualsAndHashCode
-public final class Dep {
-    private final ByteCode byteCode;
-    /**
-     * All dependencies of the bytecode, including Java internal classes, not including transitive dependencies,
-     */
-    private final LinkedHashSet<ByteCode> dependencies;
-
-    private Dep(ByteCode byteCode, LinkedHashSet<ByteCode> dependencies) {
-        this.byteCode = byteCode;
-        this.dependencies = dependencies;
-    }
+public record Dep(ByteCode byteCode, LinkedHashSet<ByteCode> dependencies) {
 
     /**
      * Resolve a bytecode's dependencies in a specific classpath.
@@ -58,7 +45,7 @@ public final class Dep {
     public LinkedHashSet<ByteCode> getExternalDependencies() {
         var result = new LinkedHashSet<ByteCode>();
         for (var dep : dependencies) {
-            if (!isJavaInternalClass(dep.getClassName())) {
+            if (!isJavaInternalClass(dep.className())) {
                 result.add(dep);
             }
         }

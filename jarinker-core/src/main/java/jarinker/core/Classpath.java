@@ -25,7 +25,7 @@ public final class Classpath {
 
         var dependencyMap = new LinkedHashMap<String, ByteCode>();
         for (var dependency : dependencies) {
-            dependencyMap.put(dependency.getClassName(), dependency);
+            dependencyMap.put(dependency.className(), dependency);
         }
 
         return new Classpath(dependencyMap);

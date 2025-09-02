@@ -12,6 +12,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.jar.JarFile;
+import org.jspecify.annotations.Nullable;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AbstractInsnNode;
@@ -113,8 +114,6 @@ public final class ByteCodeUtil {
      * @return All bytecodes in the path
      */
     public static List<ByteCode> listByteCodeInPath(Path path) {
-        assert path != null;
-
         var byteCodes = new ArrayList<ByteCode>();
 
         try {
@@ -142,8 +141,6 @@ public final class ByteCodeUtil {
      * @return All bytecodes in the jar file
      */
     public static LinkedHashSet<ByteCode> listByteCodeInJar(JarFile jarFile) {
-        assert jarFile != null;
-
         var byteCodes = new LinkedHashSet<ByteCode>();
 
         var entries = jarFile.entries();
@@ -193,8 +190,6 @@ public final class ByteCodeUtil {
      * @return All used classes for the bytecode in the classpath, including transitive dependencies.
      */
     public static LinkedHashSet<ByteCode> listUsedClassesInClasspath(ByteCode byteCode, Classpath classpath) {
-        assert byteCode != null && classpath != null;
-
         var usedClasses = new LinkedHashSet<ByteCode>();
         var visited = new HashSet<String>();
         var stack = new ArrayDeque<Dep>();
@@ -203,8 +198,8 @@ public final class ByteCodeUtil {
 
         while (!stack.isEmpty()) {
             var currentDep = stack.pop();
-            var currentByteCode = currentDep.getByteCode();
-            var className = currentByteCode.getClassName();
+            var currentByteCode = currentDep.byteCode();
+            var className = currentByteCode.className();
 
             if (!visited.add(className)) {
                 continue;
@@ -213,7 +208,7 @@ public final class ByteCodeUtil {
             usedClasses.add(currentByteCode);
 
             for (var externalDep : currentDep.getExternalDependencies()) {
-                if (!visited.contains(externalDep.getClassName())) {
+                if (!visited.contains(externalDep.className())) {
                     stack.push(Dep.of(externalDep, classpath));
                 }
             }
@@ -225,7 +220,7 @@ public final class ByteCodeUtil {
     }
 
     private static ClassNode getClassNode(ByteCode byteCode) {
-        ClassReader classReader = new ClassReader(byteCode.getByteCode());
+        ClassReader classReader = new ClassReader(byteCode.byteCode());
         ClassNode classNode = new ClassNode();
         classReader.accept(classNode, 0);
         return classNode;
@@ -308,9 +303,6 @@ public final class ByteCodeUtil {
 
     private static void collectAnnotationsDependencies(
             List<AnnotationNode> annotations, LinkedHashSet<String> dependencies) {
-        if (annotations == null) {
-            return;
-        }
 
         for (AnnotationNode annotation : annotations) {
             addDependency(dependencies, annotation.desc);
@@ -336,9 +328,6 @@ public final class ByteCodeUtil {
     }
 
     private static void addDependency(LinkedHashSet<String> dependencies, String classname) {
-        if (classname == null) {
-            return;
-        }
         var clazz = className(classname);
         if (clazz != null) {
             dependencies.add(clazz);
@@ -364,6 +353,7 @@ public final class ByteCodeUtil {
      * @return class name in the format of "java.lang.String", null if the input is invalid. e.g., primitive types or method descriptors
      * @see <a href="https://docs.oracle.com/javase/specs/jvms/se17/html/jvms-4.html#jvms-4.3">Descriptors</a>
      */
+    @Nullable
     private static String className(String classname) {
 
         assert classname != null && !classname.isBlank() : "Class name cannot be empty";

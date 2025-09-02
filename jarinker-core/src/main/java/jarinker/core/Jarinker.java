@@ -115,13 +115,13 @@ public final class Jarinker {
     private static void generateShrunkJars(
             Map<JarFile, LinkedHashSet<ByteCode>> dependencyJarToByteCodes, LinkedHashSet<ByteCode> allUsedClasses) {
 
-        var usedClasses = allUsedClasses.stream().map(ByteCode::getClassName).collect(Collectors.toSet());
+        var usedClasses = allUsedClasses.stream().map(ByteCode::className).collect(Collectors.toSet());
 
         // 遍历每个依赖 Jar，生成精简的 JAR 文件
         for (var entry : dependencyJarToByteCodes.entrySet()) {
             var byteCodes = entry.getValue();
             var newByteCodes = byteCodes.stream()
-                    .filter(byteCode -> usedClasses.contains(byteCode.getClassName()))
+                    .filter(byteCode -> usedClasses.contains(byteCode.className()))
                     .toList();
 
             if (newByteCodes.isEmpty()) {
@@ -133,9 +133,9 @@ public final class Jarinker {
 
             try (var jarOutputStream = new JarOutputStream(new FileOutputStream(newJarName))) {
                 for (var byteCode : newByteCodes) {
-                    var jarEntry = new JarEntry(byteCode.getClassName().replace(".", "/") + ".class");
+                    var jarEntry = new JarEntry(byteCode.className().replace(".", "/") + ".class");
                     jarOutputStream.putNextEntry(jarEntry);
-                    jarOutputStream.write(byteCode.getByteCode());
+                    jarOutputStream.write(byteCode.byteCode());
                     jarOutputStream.closeEntry();
                 }
 

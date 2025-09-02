@@ -21,7 +21,7 @@ class ByteCodeTest {
         assertThat(clazz).isNotNull();
 
         var byteCode = ByteCode.of(clazz.readAllBytes());
-        assertThat(byteCode.getClassName()).isEqualTo("java.util.Objects");
-        assertThat(byteCode.getByteCode()).isNotEmpty();
+        assertThat(byteCode.className()).isEqualTo("java.util.Objects");
+        assertThat(byteCode.byteCode()).isNotEmpty();
     }
 }

@@ -3,6 +3,7 @@ plugins {
     id "com.github.spotbugs" version "${spotbugsVersion}" apply false
     id "com.gradleup.shadow" version "${shadowPluginVersion}" apply false
     id "org.graalvm.buildtools.native" version "${graalvmBuildToolsVersion}" apply false
+    id "io.spring.nullability" version "${nullabilityVersion}" apply false
 }
 
 allprojects {
@@ -11,8 +12,9 @@ allprojects {
     apply plugin: "java-library"
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(21)
+        }
     }
 
     repositories {
@@ -20,12 +22,14 @@ allprojects {
     }
 
     dependencies {
+        // add jspecify
+        implementation("org.jspecify:jspecify:${jspecifyVersion}")
         compileOnly("org.projectlombok:lombok:${lombokVersion}")
         annotationProcessor("org.projectlombok:lombok:${lombokVersion}")
         testCompileOnly("org.projectlombok:lombok:${lombokVersion}")
         testAnnotationProcessor("org.projectlombok:lombok:${lombokVersion}")
 
-        testImplementation("org.springframework.boot:spring-boot-starter-test:3.3.4") {
+        testImplementation("org.springframework.boot:spring-boot-starter-test:3.5.5") {
             exclude(group: "org.springframework")
             exclude(group: "org.springframework.boot")
         }
@@ -60,4 +64,6 @@ allprojects {
         spotbugsTest.enabled = false
         omitVisitors.addAll("FindReturnRef", "DontReusePublicIdentifiers")
     }
+
+    apply plugin: "io.spring.nullability"
 }

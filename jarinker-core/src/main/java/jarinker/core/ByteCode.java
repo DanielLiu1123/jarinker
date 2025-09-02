@@ -1,7 +1,5 @@
 package jarinker.core;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import org.objectweb.asm.ClassReader;
 
 /**
@@ -10,17 +8,7 @@ import org.objectweb.asm.ClassReader;
  * @author Freeman
  * @since 2024/10/10
  */
-@Getter
-@EqualsAndHashCode
-public final class ByteCode {
-
-    private final String className;
-    private final byte[] byteCode;
-
-    private ByteCode(String className, byte[] byteCode) {
-        this.className = className;
-        this.byteCode = byteCode;
-    }
+public record ByteCode(String className, byte[] byteCode) {
 
     /**
      * Factory method to create a {@link ByteCode} instance from class name and bytecode.
@@ -30,9 +18,6 @@ public final class ByteCode {
      * @return {@link ByteCode} instance
      */
     public static ByteCode of(String className, byte[] byteCode) {
-        assert className != null;
-        assert byteCode != null;
-
         return new ByteCode(className, byteCode);
     }
 
@@ -43,8 +28,6 @@ public final class ByteCode {
      * @return {@link ByteCode} instance
      */
     public static ByteCode of(byte[] byteCode) {
-        assert byteCode != null;
-
         var cr = new ClassReader(byteCode);
         var className = cr.getClassName().replace('/', '.');
         return of(className, byteCode);
