@@ -1,7 +1,6 @@
 plugins {
     id "com.diffplug.spotless" version "${spotlessVersion}" apply false
     id "com.github.spotbugs" version "${spotbugsVersion}" apply false
-    id "com.gradleup.shadow" version "${shadowPluginVersion}" apply false
     id "org.graalvm.buildtools.native" version "${graalvmBuildToolsVersion}" apply false
     id "io.spring.nullability" version "${nullabilityVersion}" apply false
 }
