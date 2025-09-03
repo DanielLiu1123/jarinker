@@ -16,7 +16,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
-import lombok.SneakyThrows;
 
 /**
  * Main class for JAR shrinking operations.
@@ -76,7 +75,7 @@ public final class Jarinker {
 
             // Scan dependency classes
             for (Path dependencyPath : dependencies) {
-                Map<String, ClassInfo> dependencyClasses = scanClasses(dependencyPath);
+                var dependencyClasses = scanClasses(dependencyPath);
                 allClasses.putAll(dependencyClasses);
 
                 if (config.isVerbose()) {
@@ -199,12 +198,15 @@ public final class Jarinker {
 
     // Helper methods
 
-    @SneakyThrows
     private static Map<String, ClassInfo> scanClasses(Path path) {
         Map<String, ClassInfo> classes = new HashMap<>();
 
         if (Files.isDirectory(path)) {
-            Files.walkFileTree(path, new ClassFileVisitor(classes));
+            try {
+                Files.walkFileTree(path, new ClassFileVisitor(classes));
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to scan classes in " + path, e);
+            }
         } else if (Files.isRegularFile(path) && path.toString().endsWith(".jar")) {
             classes.putAll(ByteCodeUtil.analyzeJar(path));
         } else if (Files.isRegularFile(path) && path.toString().endsWith(".class")) {
