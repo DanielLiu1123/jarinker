@@ -25,7 +25,9 @@ class ClassFileVisitor extends SimpleFileVisitor<Path> {
                 classes.putAll(jarClasses);
             } else if (isClassFile(file)) {
                 ClassInfo classInfo = ByteCodeUtil.readClass(file);
-                classes.put(classInfo.getClassName(), classInfo);
+                if (classInfo != null) {
+                    classes.put(classInfo.getClassName(), classInfo);
+                }
             }
         }
         return FileVisitResult.CONTINUE;

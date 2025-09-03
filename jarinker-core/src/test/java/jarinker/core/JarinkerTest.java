@@ -295,7 +295,7 @@ class JarinkerTest {
         }
 
         @Test
-        void shouldIgnoreClassFilesInDirectory() throws IOException {
+        void shouldProcessClassFilesInDirectory() throws IOException {
             // Arrange
             var srcDir = tempDir.resolve("src");
             Files.createDirectories(srcDir);
@@ -304,7 +304,7 @@ class JarinkerTest {
             var packageDir = srcDir.resolve("com").resolve("example");
             Files.createDirectories(packageDir);
 
-            // Create class files (these should be ignored when scanning directories)
+            // Create class files (these should be processed when scanning directories)
             var class1 = createClassFile(packageDir.resolve("Test1.class"), "com.example.Test1");
             var class2 = createClassFile(packageDir.resolve("Test2.class"), "com.example.Test2");
 
@@ -315,12 +315,12 @@ class JarinkerTest {
 
             // Assert
             assertThat(result).isNotNull();
-            // .class files in directories should be ignored
-            assertThat(result.getAllClasses()).doesNotContainKeys("com.example.Test1", "com.example.Test2");
+            // .class files in directories should be processed
+            assertThat(result.getAllClasses()).containsKeys("com.example.Test1", "com.example.Test2");
         }
 
         @Test
-        void shouldScanOnlyJarFilesInDirectory() throws IOException {
+        void shouldScanBothJarAndClassFilesInDirectory() throws IOException {
             // Arrange
             var mixedDir = tempDir.resolve("mixed");
             Files.createDirectories(mixedDir);
@@ -336,9 +336,9 @@ class JarinkerTest {
 
             // Assert
             assertThat(result).isNotNull();
-            // Only JAR files should be processed, .class files should be ignored
+            // Both JAR files and .class files should be processed
             assertThat(result.getAllClasses()).containsKey("com.example.JarClass");
-            assertThat(result.getAllClasses()).doesNotContainKey("com.example.DirectClass");
+            assertThat(result.getAllClasses()).containsKey("com.example.DirectClass");
         }
     }
 

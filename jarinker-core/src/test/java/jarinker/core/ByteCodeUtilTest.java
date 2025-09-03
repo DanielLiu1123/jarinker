@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDescs;
+import java.lang.constant.MethodTypeDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.jar.JarEntry;
@@ -181,6 +183,63 @@ class ByteCodeUtilTest {
 
                 // Assert
                 assertThat(dependencies).contains("java.lang.Object");
+            } catch (Exception e) {
+                fail("Failed to create test ClassModel", e);
+            }
+        }
+
+        @Test
+        void shouldExtractAllTypesOfDependencies() {
+            // Arrange
+            var classDesc = ClassDesc.of("com.example.ComplexClass");
+            var superClassDesc = ClassDesc.of("com.example.BaseClass");
+            var interfaceDesc = ClassDesc.of("com.example.MyInterface");
+
+            var bytecode = ClassFile.of().build(classDesc, classBuilder -> {
+                classBuilder
+                        .withFlags(ClassFile.ACC_PUBLIC)
+                        .withSuperclass(superClassDesc)
+                        .withInterfaceSymbols(interfaceDesc)
+                        .withField("myField", ClassDesc.of("com.example.FieldType"), ClassFile.ACC_PRIVATE)
+                        .withMethod(
+                                "myMethod",
+                                MethodTypeDesc.of(
+                                        ClassDesc.of("com.example.ReturnType"), ClassDesc.of("com.example.ParamType")),
+                                ClassFile.ACC_PUBLIC,
+                                methodBuilder -> {
+                                    methodBuilder.withCode(codeBuilder -> {
+                                        codeBuilder
+                                                .new_(ClassDesc.of("com.example.NewObjectType"))
+                                                .dup()
+                                                .invokespecial(
+                                                        ClassDesc.of("com.example.NewObjectType"),
+                                                        ConstantDescs.INIT_NAME,
+                                                        MethodTypeDesc.of(ConstantDescs.CD_void))
+                                                .return_();
+                                    });
+                                });
+            });
+
+            try {
+                ClassModel classModel = ClassFile.of().parse(bytecode);
+                var classInfo = ClassInfo.of(classModel);
+
+                // Act
+                var dependencies = ByteCodeUtil.extractDependencies(classInfo);
+
+                // Assert - should extract dependencies from various sources
+                assertThat(dependencies)
+                        .contains(
+                                "com.example.BaseClass", // superclass
+                                "com.example.MyInterface", // interface
+                                "com.example.FieldType", // field type
+                                "com.example.ReturnType", // method return type
+                                "com.example.ParamType", // method parameter type
+                                "com.example.NewObjectType" // new object in method body
+                                );
+
+                // Should not contain the class itself
+                assertThat(dependencies).doesNotContain("com.example.ComplexClass");
             } catch (Exception e) {
                 fail("Failed to create test ClassModel", e);
             }

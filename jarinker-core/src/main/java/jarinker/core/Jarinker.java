@@ -211,7 +211,9 @@ public final class Jarinker {
             classes.putAll(ByteCodeUtil.readJar(path));
         } else if (Files.isRegularFile(path) && path.toString().endsWith(".class")) {
             ClassInfo classInfo = ByteCodeUtil.readClass(path);
-            classes.put(classInfo.getClassName(), classInfo);
+            if (classInfo != null) {
+                classes.put(classInfo.getClassName(), classInfo);
+            }
         }
 
         return classes;
@@ -220,7 +222,7 @@ public final class Jarinker {
     private Map<String, Set<String>> buildDependencyGraph(Map<String, ClassInfo> allClasses) {
         Map<String, Set<String>> dependencyGraph = new HashMap<>();
 
-        for (ClassInfo classInfo : allClasses.values()) {
+        for (var classInfo : allClasses.values()) {
             Set<String> dependencies = ByteCodeUtil.extractDependencies(classInfo);
             dependencyGraph.put(classInfo.getClassName(), dependencies);
         }
