@@ -17,7 +17,7 @@ import picocli.CommandLine;
         types = AutoComplete.GenerateCompletion.class,
         value = {ALL_DECLARED, ALL_PUBLIC
         }) // for GenerateCompletion, picocli only generate graalvm reflection config for "your own" commands
-public class Main {
+public class Cli {
 
     public static void main(String[] args) {
 

@@ -21,7 +21,7 @@ compileJava {
 }
 
 application {
-    mainClass = "jarinker.cli.Main"
+    mainClass = "jarinker.cli.Cli"
     applicationName = "jarinker"
 }
 
@@ -31,7 +31,7 @@ graalvmNative {
     binaries {
         main {
             imageName = "jarinker"
-            mainClass = "jarinker.cli.Main"
+            mainClass = "jarinker.cli.Cli"
             verbose = true
             sharedLibrary = false
         }

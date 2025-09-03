@@ -23,7 +23,7 @@ import java.util.jar.JarOutputStream;
  *
  * @author Freeman
  */
-public class Jarinker {
+public final class Jarinker {
 
     private final List<Path> sources;
     private final List<Path> dependencies;

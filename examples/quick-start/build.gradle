@@ -1,12 +1,3 @@
-plugins {
-    id "application"
-}
-
-application {
-    mainClass = "com.example.Main"
-    applicationName = "quick-start"
-}
-
 def guavaVersion = "33.4.8"
 def guavaJar = file("libs/guava-${guavaVersion}-jre.jar")
 tasks.register("downloadGuava", Exec) {
