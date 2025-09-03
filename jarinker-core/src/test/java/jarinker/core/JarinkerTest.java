@@ -12,11 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
+import java.util.jar.JarOutputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Opcodes;
 
 class JarinkerTest {
 
@@ -262,6 +266,81 @@ class JarinkerTest {
         }
     }
 
+    @Nested
+    class ScanPathTests {
+
+        @Test
+        void shouldScanJarFilesInDirectory() throws IOException {
+            // Arrange
+            var libDir = tempDir.resolve("lib");
+            Files.createDirectories(libDir);
+
+            // Create a subdirectory with JAR files
+            var subDir = libDir.resolve("subdir");
+            Files.createDirectories(subDir);
+
+            // Create JAR files in both directories
+            var jar1 = createJarWithClass(libDir.resolve("test1.jar"), "com.example.Test1");
+            var jar2 = createJarWithClass(subDir.resolve("test2.jar"), "com.example.Test2");
+
+            var testJarinker = new Jarinker(List.of(sourcePath), List.of(libDir), config);
+
+            // Act
+            var result = testJarinker.analyze();
+
+            // Assert
+            assertThat(result).isNotNull();
+            assertThat(result.getAllClasses()).containsKeys("com.example.Test1", "com.example.Test2");
+        }
+
+        @Test
+        void shouldIgnoreClassFilesInDirectory() throws IOException {
+            // Arrange
+            var srcDir = tempDir.resolve("src");
+            Files.createDirectories(srcDir);
+
+            // Create a subdirectory structure
+            var packageDir = srcDir.resolve("com").resolve("example");
+            Files.createDirectories(packageDir);
+
+            // Create class files (these should be ignored when scanning directories)
+            var class1 = createClassFile(packageDir.resolve("Test1.class"), "com.example.Test1");
+            var class2 = createClassFile(packageDir.resolve("Test2.class"), "com.example.Test2");
+
+            var testJarinker = new Jarinker(List.of(srcDir), List.of(dependencyPath), config);
+
+            // Act
+            var result = testJarinker.analyze();
+
+            // Assert
+            assertThat(result).isNotNull();
+            // .class files in directories should be ignored
+            assertThat(result.getAllClasses()).doesNotContainKeys("com.example.Test1", "com.example.Test2");
+        }
+
+        @Test
+        void shouldScanOnlyJarFilesInDirectory() throws IOException {
+            // Arrange
+            var mixedDir = tempDir.resolve("mixed");
+            Files.createDirectories(mixedDir);
+
+            // Create both JAR and class files
+            var jar = createJarWithClass(mixedDir.resolve("test.jar"), "com.example.JarClass");
+            var classFile = createClassFile(mixedDir.resolve("DirectClass.class"), "com.example.DirectClass");
+
+            var testJarinker = new Jarinker(List.of(mixedDir), List.of(), config);
+
+            // Act
+            var result = testJarinker.analyze();
+
+            // Assert
+            assertThat(result).isNotNull();
+            // Only JAR files should be processed, .class files should be ignored
+            assertThat(result.getAllClasses()).containsKey("com.example.JarClass");
+            assertThat(result.getAllClasses()).doesNotContainKey("com.example.DirectClass");
+        }
+    }
+
     // Helper methods
     private Map<String, ClassInfo> createMockClasses() {
         Map<String, ClassInfo> classes = new HashMap<>();
@@ -280,5 +359,35 @@ class JarinkerTest {
     private ClassInfo createClassInfo(String className) {
         var packageName = className.substring(0, className.lastIndexOf('.'));
         return new ClassInfo(className, packageName, false, false, null, Set.of(), Set.of(), 1000);
+    }
+
+    private Path createJarWithClass(Path jarPath, String className) throws IOException {
+        // Create a simple class bytecode
+        var classWriter = new ClassWriter(0);
+        var internalName = className.replace('.', '/');
+        classWriter.visit(Opcodes.V11, Opcodes.ACC_PUBLIC, internalName, null, "java/lang/Object", null);
+        classWriter.visitEnd();
+        var bytecode = classWriter.toByteArray();
+
+        try (var jos = new JarOutputStream(Files.newOutputStream(jarPath))) {
+            var entry = new JarEntry(internalName + ".class");
+            jos.putNextEntry(entry);
+            jos.write(bytecode);
+            jos.closeEntry();
+        }
+
+        return jarPath;
+    }
+
+    private Path createClassFile(Path classPath, String className) throws IOException {
+        // Create a simple class bytecode
+        var classWriter = new ClassWriter(0);
+        var internalName = className.replace('.', '/');
+        classWriter.visit(Opcodes.V11, Opcodes.ACC_PUBLIC, internalName, null, "java/lang/Object", null);
+        classWriter.visitEnd();
+        var bytecode = classWriter.toByteArray();
+
+        Files.write(classPath, bytecode);
+        return classPath;
     }
 }

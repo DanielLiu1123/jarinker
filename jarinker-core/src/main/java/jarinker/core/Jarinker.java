@@ -16,6 +16,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.jar.JarOutputStream;
+import lombok.SneakyThrows;
 
 /**
  * Main class for JAR shrinking operations.
@@ -32,9 +33,9 @@ public final class Jarinker {
     /**
      * Package-private constructor for JarinkerBuilder.
      *
-     * @param sources source paths
+     * @param sources      source paths
      * @param dependencies dependency paths
-     * @param config configuration
+     * @param config       configuration
      */
     Jarinker(List<Path> sources, List<Path> dependencies, JarinkerConfig config) {
         this.sources = new ArrayList<>(sources);
@@ -64,7 +65,7 @@ public final class Jarinker {
 
             // Scan source classes (these are entry points)
             for (Path sourcePath : sources) {
-                Map<String, ClassInfo> sourceClasses = scanPath(sourcePath);
+                var sourceClasses = scanClasses(sourcePath);
                 allClasses.putAll(sourceClasses);
                 entryPoints.addAll(sourceClasses.keySet());
 
@@ -75,7 +76,7 @@ public final class Jarinker {
 
             // Scan dependency classes
             for (Path dependencyPath : dependencies) {
-                Map<String, ClassInfo> dependencyClasses = scanPath(dependencyPath);
+                Map<String, ClassInfo> dependencyClasses = scanClasses(dependencyPath);
                 allClasses.putAll(dependencyClasses);
 
                 if (config.isVerbose()) {
@@ -198,30 +199,17 @@ public final class Jarinker {
 
     // Helper methods
 
-    private Map<String, ClassInfo> scanPath(Path path) {
+    @SneakyThrows
+    private static Map<String, ClassInfo> scanClasses(Path path) {
         Map<String, ClassInfo> classes = new HashMap<>();
 
-        try {
-            if (Files.isDirectory(path)) {
-                // Scan directory for .class files
-                Files.walk(path).filter(p -> p.toString().endsWith(".class")).forEach(classFile -> {
-                    try {
-                        ClassInfo classInfo = ByteCodeUtil.analyzeClass(classFile);
-                        if (classInfo != null) {
-                            classes.put(classInfo.getClassName(), classInfo);
-                        }
-                    } catch (Exception e) {
-                        if (config.isVerbose()) {
-                            System.err.println("Failed to analyze class: " + classFile + " - " + e.getMessage());
-                        }
-                    }
-                });
-            } else if (Files.isRegularFile(path) && path.toString().endsWith(".jar")) {
-                // Scan JAR file
-                classes.putAll(ByteCodeUtil.analyzeJar(path));
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to scan path: " + path, e);
+        if (Files.isDirectory(path)) {
+            Files.walkFileTree(path, new ClassFileVisitor(classes));
+        } else if (Files.isRegularFile(path) && path.toString().endsWith(".jar")) {
+            classes.putAll(ByteCodeUtil.analyzeJar(path));
+        } else if (Files.isRegularFile(path) && path.toString().endsWith(".class")) {
+            ClassInfo classInfo = ByteCodeUtil.analyzeClass(path);
+            classes.put(classInfo.getClassName(), classInfo);
         }
 
         return classes;
