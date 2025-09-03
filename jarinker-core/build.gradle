@@ -1,9 +1,5 @@
 
 dependencies {
-
-    implementation("org.ow2.asm:asm:${asmVersion}")
-    implementation("org.ow2.asm:asm-tree:${asmVersion}")
-
     testImplementation("org.junit.jupiter:junit-jupiter:${junitVersion}")
     testImplementation("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
     testImplementation("org.junit.platform:junit-platform-launcher:1.10.1")

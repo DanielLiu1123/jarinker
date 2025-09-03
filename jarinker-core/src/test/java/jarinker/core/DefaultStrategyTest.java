@@ -2,6 +2,9 @@ package jarinker.core;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -248,7 +251,19 @@ class DefaultStrategyTest {
     }
 
     private ClassInfo createClassInfo(String className) {
-        var packageName = className.substring(0, className.lastIndexOf('.'));
-        return new ClassInfo(className, packageName, false, false, null, Set.of(), Set.of(), 1000);
+        // Create a simple class bytecode using JDK Class File API
+        var classDesc = ClassDesc.of(className);
+        var superClassDesc = ClassDesc.of("java.lang.Object");
+
+        var bytecode = ClassFile.of().build(classDesc, classBuilder -> {
+            classBuilder.withFlags(ClassFile.ACC_PUBLIC).withSuperclass(superClassDesc);
+        });
+
+        try {
+            ClassModel classModel = ClassFile.of().parse(bytecode);
+            return ClassInfo.of(classModel);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create ClassInfo for " + className, e);
+        }
     }
 }

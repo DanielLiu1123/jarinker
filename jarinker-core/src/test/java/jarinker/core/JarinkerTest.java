@@ -5,6 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mockStatic;
 
 import java.io.IOException;
+import java.lang.classfile.ClassFile;
+import java.lang.classfile.ClassModel;
+import java.lang.constant.ClassDesc;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -19,8 +22,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.mockito.MockedStatic;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.Opcodes;
 
 class JarinkerTest {
 
@@ -58,8 +59,8 @@ class JarinkerTest {
             var mockDependencyGraph = createMockDependencyGraph();
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinker.analyze();
@@ -80,8 +81,8 @@ class JarinkerTest {
             Files.delete(sourcePath);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act - should not throw exception, but return empty result
                 var result = jarinker.analyze();
@@ -102,8 +103,8 @@ class JarinkerTest {
             var jarinkerWithPatterns = new Jarinker(List.of(sourcePath), List.of(dependencyPath), configWithPatterns);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinkerWithPatterns.analyze();
@@ -123,8 +124,8 @@ class JarinkerTest {
             var jarinkerWithPatterns = new Jarinker(List.of(sourcePath), List.of(dependencyPath), configWithPatterns);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinkerWithPatterns.analyze();
@@ -142,8 +143,8 @@ class JarinkerTest {
         void shouldReturnShrinkResultWithBasicInformation() {
             // Arrange
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinker.shrink();
@@ -163,8 +164,8 @@ class JarinkerTest {
             Files.delete(dependencyPath);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act - should not throw exception, but return empty result
                 var result = jarinker.shrink();
@@ -183,9 +184,9 @@ class JarinkerTest {
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
                 mockedUtil
-                        .when(() -> ByteCodeUtil.analyzeJar(any()))
+                        .when(() -> ByteCodeUtil.readJar(any()))
                         .thenReturn(Map.of("com.example.Test", createClassInfo("com.example.Test")));
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinker.shrink();
@@ -210,8 +211,8 @@ class JarinkerTest {
             var jarinkerWithPattern = new Jarinker(List.of(sourcePath), List.of(dependencyPath), configWithPattern);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinkerWithPattern.analyze();
@@ -231,8 +232,8 @@ class JarinkerTest {
             var jarinkerWithPattern = new Jarinker(List.of(sourcePath), List.of(dependencyPath), configWithPattern);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = jarinkerWithPattern.analyze();
@@ -254,8 +255,8 @@ class JarinkerTest {
             var verboseJarinker = new Jarinker(List.of(sourcePath), List.of(dependencyPath), verboseConfig);
 
             try (MockedStatic<ByteCodeUtil> mockedUtil = mockStatic(ByteCodeUtil.class)) {
-                mockedUtil.when(() -> ByteCodeUtil.analyzeJar(any())).thenReturn(Map.of());
-                mockedUtil.when(() -> ByteCodeUtil.analyzeClass(any())).thenReturn(null);
+                mockedUtil.when(() -> ByteCodeUtil.readJar(any())).thenReturn(Map.of());
+                mockedUtil.when(() -> ByteCodeUtil.readClass(any())).thenReturn(null);
 
                 // Act
                 var result = verboseJarinker.analyze();
@@ -357,17 +358,31 @@ class JarinkerTest {
     }
 
     private ClassInfo createClassInfo(String className) {
-        var packageName = className.substring(0, className.lastIndexOf('.'));
-        return new ClassInfo(className, packageName, false, false, null, Set.of(), Set.of(), 1000);
+        // Create a simple class bytecode using JDK Class File API
+        var classDesc = ClassDesc.of(className);
+        var superClassDesc = ClassDesc.of("java.lang.Object");
+
+        var bytecode = ClassFile.of().build(classDesc, classBuilder -> {
+            classBuilder.withFlags(ClassFile.ACC_PUBLIC).withSuperclass(superClassDesc);
+        });
+
+        try {
+            ClassModel classModel = ClassFile.of().parse(bytecode);
+            return ClassInfo.of(classModel);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create ClassInfo for " + className, e);
+        }
     }
 
     private Path createJarWithClass(Path jarPath, String className) throws IOException {
-        // Create a simple class bytecode
-        var classWriter = new ClassWriter(0);
+        // Create a simple class bytecode using JDK Class File API
+        var classDesc = ClassDesc.of(className);
+        var superClassDesc = ClassDesc.of("java.lang.Object");
         var internalName = className.replace('.', '/');
-        classWriter.visit(Opcodes.V11, Opcodes.ACC_PUBLIC, internalName, null, "java/lang/Object", null);
-        classWriter.visitEnd();
-        var bytecode = classWriter.toByteArray();
+
+        var bytecode = ClassFile.of().build(classDesc, classBuilder -> {
+            classBuilder.withFlags(ClassFile.ACC_PUBLIC).withSuperclass(superClassDesc);
+        });
 
         try (var jos = new JarOutputStream(Files.newOutputStream(jarPath))) {
             var entry = new JarEntry(internalName + ".class");
@@ -380,12 +395,13 @@ class JarinkerTest {
     }
 
     private Path createClassFile(Path classPath, String className) throws IOException {
-        // Create a simple class bytecode
-        var classWriter = new ClassWriter(0);
-        var internalName = className.replace('.', '/');
-        classWriter.visit(Opcodes.V11, Opcodes.ACC_PUBLIC, internalName, null, "java/lang/Object", null);
-        classWriter.visitEnd();
-        var bytecode = classWriter.toByteArray();
+        // Create a simple class bytecode using JDK Class File API
+        var classDesc = ClassDesc.of(className);
+        var superClassDesc = ClassDesc.of("java.lang.Object");
+
+        var bytecode = ClassFile.of().build(classDesc, classBuilder -> {
+            classBuilder.withFlags(ClassFile.ACC_PUBLIC).withSuperclass(superClassDesc);
+        });
 
         Files.write(classPath, bytecode);
         return classPath;

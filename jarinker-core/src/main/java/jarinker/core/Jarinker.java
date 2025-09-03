@@ -64,7 +64,7 @@ public final class Jarinker {
 
             // Scan source classes (these are entry points)
             for (Path sourcePath : sources) {
-                var sourceClasses = scanClasses(sourcePath);
+                var sourceClasses = getClasses(sourcePath);
                 allClasses.putAll(sourceClasses);
                 entryPoints.addAll(sourceClasses.keySet());
 
@@ -75,7 +75,7 @@ public final class Jarinker {
 
             // Scan dependency classes
             for (Path dependencyPath : dependencies) {
-                var dependencyClasses = scanClasses(dependencyPath);
+                var dependencyClasses = getClasses(dependencyPath);
                 allClasses.putAll(dependencyClasses);
 
                 if (config.isVerbose()) {
@@ -198,7 +198,7 @@ public final class Jarinker {
 
     // Helper methods
 
-    private static Map<String, ClassInfo> scanClasses(Path path) {
+    private static Map<String, ClassInfo> getClasses(Path path) {
         Map<String, ClassInfo> classes = new HashMap<>();
 
         if (Files.isDirectory(path)) {
@@ -208,9 +208,9 @@ public final class Jarinker {
                 throw new RuntimeException("Failed to scan classes in " + path, e);
             }
         } else if (Files.isRegularFile(path) && path.toString().endsWith(".jar")) {
-            classes.putAll(ByteCodeUtil.analyzeJar(path));
+            classes.putAll(ByteCodeUtil.readJar(path));
         } else if (Files.isRegularFile(path) && path.toString().endsWith(".class")) {
-            ClassInfo classInfo = ByteCodeUtil.analyzeClass(path);
+            ClassInfo classInfo = ByteCodeUtil.readClass(path);
             classes.put(classInfo.getClassName(), classInfo);
         }
 
@@ -270,7 +270,8 @@ public final class Jarinker {
         Map<String, Integer> packageCounts = new HashMap<>();
 
         for (ClassInfo classInfo : allClasses.values()) {
-            String packageName = classInfo.getPackageName();
+            String className = classInfo.getClassName();
+            String packageName = ByteCodeUtil.getPackageName(className);
             packageCounts.put(packageName, packageCounts.getOrDefault(packageName, 0) + 1);
         }
 

@@ -21,10 +21,10 @@ class ClassFileVisitor extends SimpleFileVisitor<Path> {
     public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
         if (attrs.isRegularFile()) {
             if (isJar(file)) {
-                var jarClasses = ByteCodeUtil.analyzeJar(file);
+                var jarClasses = ByteCodeUtil.readJar(file);
                 classes.putAll(jarClasses);
-            } else if (isClass(file)) {
-                var classInfo = ByteCodeUtil.analyzeClass(file);
+            } else if (isClassFile(file)) {
+                ClassInfo classInfo = ByteCodeUtil.readClass(file);
                 classes.put(classInfo.getClassName(), classInfo);
             }
         }
@@ -35,7 +35,7 @@ class ClassFileVisitor extends SimpleFileVisitor<Path> {
         return file.toString().endsWith(".jar");
     }
 
-    private static boolean isClass(Path file) {
+    private static boolean isClassFile(Path file) {
         return file.toString().endsWith(".class");
     }
 }

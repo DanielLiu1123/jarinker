@@ -4,6 +4,7 @@ import static jarinker.cli.util.Printer.print;
 
 import jarinker.core.AnalysisResult;
 import jarinker.core.JarinkerBuilder;
+import jarinker.core.JarinkerConfig;
 import jarinker.core.ShrinkStrategy;
 import java.nio.file.Path;
 import java.time.Duration;
@@ -64,7 +65,7 @@ public class AnalyzeCommand implements Callable<Integer> {
             }
 
             // Build Jarinker configuration
-            var configBuilder = jarinker.core.JarinkerConfig.builder()
+            var configBuilder = JarinkerConfig.builder()
                     .strategy(ShrinkStrategy.DEFAULT)
                     .verbose(verbose)
                     .showProgress(true)
