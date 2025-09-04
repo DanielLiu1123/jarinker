@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarFile;
-import org.jspecify.annotations.Nullable;
 
 /**
  * Utility class for analyzing bytecode and extracting dependencies.
@@ -42,20 +41,19 @@ public final class ByteCodeUtil {
      * @param classFile path to class file
      * @return ClassInfo or null if analysis fails
      */
-    public static @Nullable ClassInfo readClass(Path classFile) {
+    public static ClassInfo readClass(Path classFile) {
         if (!Files.exists(classFile)
                 || !Files.isRegularFile(classFile)
                 || !classFile.toString().endsWith(".class")) {
-            return null;
+            throw new RuntimeException("Failed to analyze class: " + classFile);
         }
 
         try {
             byte[] bytecode = Files.readAllBytes(classFile);
             ClassModel classModel = ClassFile.of().parse(bytecode);
             return ClassInfo.of(classModel);
-        } catch (IOException | RuntimeException e) {
-            // Return null if analysis fails (invalid bytecode, parsing errors, etc.)
-            return null;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to analyze class: " + classFile, e);
         }
     }
 
@@ -86,7 +84,6 @@ public final class ByteCodeUtil {
                     System.err.println("Failed to analyze class in JAR: " + entry.getName() + " - " + e.getMessage());
                 }
             });
-
         } catch (IOException e) {
             throw new RuntimeException("Failed to analyze JAR: " + jarPath, e);
         }
@@ -162,7 +159,7 @@ public final class ByteCodeUtil {
     /**
      * Extract class types from field/method descriptor.
      *
-     * @param descriptor the descriptor string
+     * @param descriptor   the descriptor string
      * @param dependencies set to add dependencies to
      */
     private static void extractTypesFromDescriptor(String descriptor, Set<String> dependencies) {
@@ -192,7 +189,7 @@ public final class ByteCodeUtil {
     /**
      * Extract dependencies from code model (method body).
      *
-     * @param codeModel the code model
+     * @param codeModel    the code model
      * @param dependencies set to add dependencies to
      */
     private static void extractCodeDependencies(CodeModel codeModel, Set<String> dependencies) {
@@ -239,7 +236,7 @@ public final class ByteCodeUtil {
     /**
      * Extract annotation dependencies from class model.
      *
-     * @param classModel the class model
+     * @param classModel   the class model
      * @param dependencies set to add dependencies to
      */
     private static void extractAnnotationDependencies(ClassModel classModel, Set<String> dependencies) {
