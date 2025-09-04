@@ -318,9 +318,4 @@ public final class ByteCodeUtil {
                     });
         }
     }
-
-    public static String getPackageName(String className) {
-        int lastDot = className.lastIndexOf('.');
-        return lastDot > 0 ? className.substring(0, lastDot) : "";
-    }
 }
