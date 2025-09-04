@@ -104,9 +104,10 @@ public final class ByteCodeUtil {
         // 1. Extract all class references from constant pool
         for (var entry : classModel.constantPool()) {
             if (entry instanceof ClassEntry classEntry) {
-                String className = classEntry.asInternalName().replace('/', '.');
-                // Filter out primitive array types and the class itself
-                if (!className.startsWith("[") && !className.equals(classInfo.getClassName())) {
+                String internalName = classEntry.asInternalName();
+                String className = normalizeClassName(internalName);
+                // Filter out invalid class names and self-reference
+                if (!className.isEmpty() && !className.equals(classInfo.getClassName())) {
                     dependencies.add(className);
                 }
             }
@@ -114,13 +115,18 @@ public final class ByteCodeUtil {
 
         // 2. Extract superclass dependency
         if (classModel.superclass().isPresent()) {
-            String superClass = classModel.superclass().get().asInternalName().replace('/', '.');
-            dependencies.add(superClass);
+            String superClass = normalizeClassName(classModel.superclass().get().asInternalName());
+            if (!superClass.isEmpty()) {
+                dependencies.add(superClass);
+            }
         }
 
         // 3. Extract interface dependencies
         for (var interfaceEntry : classModel.interfaces()) {
-            dependencies.add(interfaceEntry.asInternalName().replace('/', '.'));
+            String interfaceName = normalizeClassName(interfaceEntry.asInternalName());
+            if (!interfaceName.isEmpty()) {
+                dependencies.add(interfaceName);
+            }
         }
 
         // 4. Extract field type dependencies
@@ -154,6 +160,36 @@ public final class ByteCodeUtil {
                 );
 
         return dependencies;
+    }
+
+    /**
+     * Normalize JVM internal class name to standard Java class name.
+     *
+     * @param internalName JVM internal class name (e.g., "Ljava/lang/Object;", "[Ljava/lang/String;")
+     * @return normalized class name or empty string if invalid/should be filtered
+     */
+    private static String normalizeClassName(String internalName) {
+        if (internalName == null || internalName.isEmpty()) {
+            return "";
+        }
+
+        // Skip array types
+        if (internalName.startsWith("[")) {
+            return "";
+        }
+
+        // Handle object types: Ljava/lang/Object; -> java.lang.Object
+        if (internalName.startsWith("L") && internalName.endsWith(";")) {
+            return internalName.substring(1, internalName.length() - 1).replace('/', '.');
+        }
+
+        // Handle regular class names: java/lang/Object -> java.lang.Object
+        if (!internalName.contains(";") && !internalName.startsWith("L")) {
+            return internalName.replace('/', '.');
+        }
+
+        // Filter out primitive types and invalid formats
+        return "";
     }
 
     /**
@@ -197,29 +233,39 @@ public final class ByteCodeUtil {
             switch (element) {
                 case InvokeInstruction invoke -> {
                     // Method invocation - add owner class
-                    String ownerClass = invoke.owner().asInternalName().replace('/', '.');
-                    dependencies.add(ownerClass);
+                    String ownerClass = normalizeClassName(invoke.owner().asInternalName());
+                    if (!ownerClass.isEmpty()) {
+                        dependencies.add(ownerClass);
+                    }
                 }
                 case FieldInstruction field -> {
                     // Field access - add owner class
-                    String ownerClass = field.owner().asInternalName().replace('/', '.');
-                    dependencies.add(ownerClass);
+                    String ownerClass = normalizeClassName(field.owner().asInternalName());
+                    if (!ownerClass.isEmpty()) {
+                        dependencies.add(ownerClass);
+                    }
                 }
                 case NewObjectInstruction newObj -> {
                     // Object creation - add class
-                    String className = newObj.className().asInternalName().replace('/', '.');
-                    dependencies.add(className);
+                    String className = normalizeClassName(newObj.className().asInternalName());
+                    if (!className.isEmpty()) {
+                        dependencies.add(className);
+                    }
                 }
                 case NewReferenceArrayInstruction newArray -> {
                     // Array creation - add component type
                     String componentType =
-                            newArray.componentType().asInternalName().replace('/', '.');
-                    dependencies.add(componentType);
+                            normalizeClassName(newArray.componentType().asInternalName());
+                    if (!componentType.isEmpty()) {
+                        dependencies.add(componentType);
+                    }
                 }
                 case TypeCheckInstruction typeCheck -> {
                     // Type checking (instanceof, checkcast) - add class
-                    String className = typeCheck.type().asInternalName().replace('/', '.');
-                    dependencies.add(className);
+                    String className = normalizeClassName(typeCheck.type().asInternalName());
+                    if (!className.isEmpty()) {
+                        dependencies.add(className);
+                    }
                 }
                 case InvokeDynamicInstruction invokeDynamic -> {
                     // Dynamic invocation - extract from bootstrap method
