@@ -272,8 +272,7 @@ public final class Jarinker {
         Map<String, Integer> packageCounts = new HashMap<>();
 
         for (ClassInfo classInfo : allClasses.values()) {
-            String className = classInfo.getClassName();
-            String packageName = ByteCodeUtil.getPackageName(className);
+            String packageName = classInfo.getPackageName();
             packageCounts.put(packageName, packageCounts.getOrDefault(packageName, 0) + 1);
         }
 
