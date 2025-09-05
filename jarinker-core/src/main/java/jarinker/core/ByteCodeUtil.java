@@ -241,9 +241,6 @@ public final class ByteCodeUtil {
                 } else {
                     i++;
                 }
-            } else if (c == '[') {
-                // Array type: skip array markers
-                i++;
             } else {
                 // Other characters: skip
                 i++;
@@ -297,9 +294,6 @@ public final class ByteCodeUtil {
                 } else {
                     i++;
                 }
-            } else if (c == '[') {
-                // Array type: skip array markers
-                i++;
             } else {
                 // Primitive type or other: skip
                 i++;
