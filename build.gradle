@@ -32,6 +32,7 @@ allprojects {
             exclude(group: "org.springframework")
             exclude(group: "org.springframework.boot")
         }
+        testImplementation("org.junit.platform:junit-platform-launcher")
     }
 
     test {

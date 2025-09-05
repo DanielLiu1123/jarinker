@@ -132,6 +132,10 @@ public final class ByteCodeUtil {
         // 4. Extract field type dependencies
         for (FieldModel field : classModel.fields()) {
             extractTypesFromDescriptor(field.fieldTypeSymbol().descriptorString(), dependencies);
+            // Extract generic signature dependencies
+            field.findAttribute(Attributes.signature()).ifPresent(attr -> {
+                extractTypesFromSignature(attr.signature().stringValue(), dependencies);
+            });
         }
 
         // 5. Extract method dependencies
@@ -139,10 +143,17 @@ public final class ByteCodeUtil {
             // Method parameters and return type
             extractTypesFromDescriptor(method.methodTypeSymbol().descriptorString(), dependencies);
 
+            // Extract generic signature dependencies
+            method.findAttribute(Attributes.signature()).ifPresent(attr -> {
+                extractTypesFromSignature(attr.signature().stringValue(), dependencies);
+            });
+
             // Method body dependencies
             for (MethodElement element : method) {
                 if (element instanceof CodeModel codeModel) {
                     extractCodeDependencies(codeModel, dependencies);
+                    // Extract local variable type information
+                    extractLocalVariableTypes(codeModel, dependencies);
                 }
             }
         }
@@ -193,6 +204,80 @@ public final class ByteCodeUtil {
     }
 
     /**
+     * Extract class types from generic signature.
+     * Generic signatures contain more detailed type information including generic parameters.
+     *
+     * @param signature    the generic signature string
+     * @param dependencies set to add dependencies to
+     */
+    private static void extractTypesFromSignature(String signature, Set<String> dependencies) {
+        if (signature == null || signature.isEmpty()) {
+            return;
+        }
+
+        // Parse generic signature - this is a simplified parser
+        // Generic signatures have format like: Ljava/util/Map<Ljava/lang/String;Ljava/lang/Integer;>;
+        int i = 0;
+        while (i < signature.length()) {
+            char c = signature.charAt(i);
+            if (c == 'L') {
+                // Object type: Lcom/example/Class; or Lcom/example/Class<...>;
+                int end = findClassNameEnd(signature, i);
+                if (end != -1) {
+                    String internalName = signature.substring(i + 1, end);
+                    String normalizedName = normalizeClassName("L" + internalName + ";");
+                    if (!normalizedName.isEmpty()) {
+                        dependencies.add(normalizedName);
+                    }
+                    i = end + 1;
+                } else {
+                    i++;
+                }
+            } else if (c == 'T') {
+                // Type variable: TT; - skip type variables
+                int end = signature.indexOf(';', i);
+                if (end != -1) {
+                    i = end + 1;
+                } else {
+                    i++;
+                }
+            } else if (c == '[') {
+                // Array type: skip array markers
+                i++;
+            } else {
+                // Other characters: skip
+                i++;
+            }
+        }
+    }
+
+    /**
+     * Find the end of a class name in a generic signature, handling generic parameters.
+     *
+     * @param signature the signature string
+     * @param start the start position (should be at 'L')
+     * @return the position of the semicolon that ends the class name, or -1 if not found
+     */
+    private static int findClassNameEnd(String signature, int start) {
+        int i = start + 1; // skip 'L'
+        int depth = 0;
+
+        while (i < signature.length()) {
+            char c = signature.charAt(i);
+            if (c == '<') {
+                depth++;
+            } else if (c == '>') {
+                depth--;
+            } else if (c == ';' && depth == 0) {
+                return i;
+            }
+            i++;
+        }
+
+        return -1;
+    }
+
+    /**
      * Extract class types from field/method descriptor.
      *
      * @param descriptor   the descriptor string
@@ -220,6 +305,28 @@ public final class ByteCodeUtil {
                 i++;
             }
         }
+    }
+
+    /**
+     * Extract dependencies from local variable type information.
+     *
+     * @param codeModel    the code model
+     * @param dependencies set to add dependencies to
+     */
+    private static void extractLocalVariableTypes(CodeModel codeModel, Set<String> dependencies) {
+        // Extract from LocalVariableTable attribute
+        codeModel.findAttribute(Attributes.localVariableTable()).ifPresent(attr -> {
+            for (var localVar : attr.localVariables()) {
+                extractTypesFromDescriptor(localVar.typeSymbol().descriptorString(), dependencies);
+            }
+        });
+
+        // Extract from LocalVariableTypeTable attribute (for generic types)
+        codeModel.findAttribute(Attributes.localVariableTypeTable()).ifPresent(attr -> {
+            for (var localVar : attr.localVariableTypes()) {
+                extractTypesFromSignature(localVar.signature().stringValue(), dependencies);
+            }
+        });
     }
 
     /**

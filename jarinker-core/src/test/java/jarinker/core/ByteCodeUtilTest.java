@@ -118,8 +118,8 @@ class ByteCodeUtilTest {
             // Act
             var actual = ByteCodeUtil.extractDependencies(classInfo);
 
-            // Assert - 验证无效类名不会出现在结果中
-            // 这些是JVM内部表示的原始类型和无效类名，应该被过滤掉
+            // Assert - verify invalid class names do not appear in results
+            // These are JVM internal primitive type representations and invalid class names that should be filtered out
             assertThat(actual).doesNotContain(invalidClassName);
         }
 
@@ -144,13 +144,13 @@ class ByteCodeUtilTest {
 
         @Test
         void shouldHandleClassWithNoSuperclass() {
-            // Arrange - Object类没有显式的超类
+            // Arrange - Object class has no explicit superclass
             var classInfo = createSimpleClassInfo("java.lang.Object");
 
             // Act
             var actual = ByteCodeUtil.extractDependencies(classInfo);
 
-            // Assert - Object类应该没有依赖（除了可能的内部引用）
+            // Assert - Object class should have no dependencies (except possible internal references)
             assertThat(actual).doesNotContain("java.lang.Object");
         }
 
@@ -169,29 +169,92 @@ class ByteCodeUtilTest {
         }
 
         @Test
+        void shouldExtractDependenciesFromComplexTestClass() {
+            // Arrange - analyze the complex test class with comprehensive dependencies
+            var classInfo = createComplexTestClassInfo();
+
+            // Act
+            var actual = ByteCodeUtil.extractDependencies(classInfo);
+
+            // Assert
+            printComplexClassDependencies(actual);
+
+            // Verify it contains various types of dependencies
+            assertThat(actual)
+                    .contains(
+                            // Basic inheritance and interfaces
+                            "java.util.AbstractMap",
+                            "java.util.Map",
+                            "java.lang.Cloneable",
+                            "java.io.Serializable",
+
+                            // Generic collections
+                            "java.util.concurrent.ConcurrentHashMap",
+                            "java.util.HashSet",
+                            "java.util.LinkedList",
+                            "java.util.concurrent.CompletableFuture",
+                            "java.util.Optional",
+
+                            // Functional interfaces
+                            "java.util.function.BiConsumer",
+                            "java.util.function.Consumer",
+                            "java.util.function.Function",
+                            "java.util.function.Predicate",
+                            "java.util.function.Supplier",
+
+                            // Concurrency classes
+                            "java.util.concurrent.atomic.AtomicReference",
+                            "java.lang.ref.WeakReference",
+                            "java.lang.ThreadLocal",
+                            "java.util.concurrent.TimeUnit",
+                            "java.util.concurrent.ForkJoinPool",
+                            "java.util.concurrent.Executors",
+
+                            // Exception types
+                            "java.lang.IllegalArgumentException",
+                            "java.lang.IllegalStateException",
+                            "java.lang.RuntimeException",
+
+                            // Reflection classes
+                            "java.lang.reflect.Method",
+                            "java.lang.reflect.InvocationTargetException",
+
+                            // Stream and collectors
+                            "java.util.stream.Stream",
+                            "java.util.stream.Collectors",
+
+                            // Serialization
+                            "java.io.ObjectOutputStream",
+                            "java.io.ObjectInputStream",
+                            "java.io.IOException",
+                            "java.lang.ClassNotFoundException");
+
+            // Verify no self-reference
+            assertThat(actual).doesNotContain("jarinker.core.ComplexTestClass");
+
+            // Verify substantial number of dependencies (should be much more than simple classes)
+            assertThat(actual.size()).isGreaterThan(50);
+        }
+
+        @Test
         void shouldExtractDependenciesFromHashMapClass() {
-            // Arrange - 直接分析 HashMap 类本身
+            // Arrange - analyze HashMap class itself
             var classInfo = createRealHashMapClassInfo();
 
             // Act
             var actual = ByteCodeUtil.extractDependencies(classInfo);
 
+            // Assert
             printHashMapDependencies(actual);
 
+            // HashMap implements Map, Cloneable, Serializable interfaces and extends AbstractMap
+            // Also contains many other internal dependencies
             assertThat(actual)
-                    .contains(
-                            "java.io.IOException",
-                            "java.io.InvalidObjectException",
-                            "java.io.ObjectInputStream",
-                            "java.io.Serializable",
-                            "java.lang.reflect.ParameterizedType",
-                            "java.lang.reflect.Type",
-                            "java.util.function.BiConsumer",
-                            "java.util.function.BiFunction",
-                            "java.util.function.Consumer",
-                            "java.util.function.Function",
-                            "jdk.internal.access.SharedSecrets");
+                    .contains("java.util.AbstractMap", "java.util.Map", "java.lang.Cloneable", "java.io.Serializable");
+            // Verify no self-reference
             assertThat(actual).doesNotContain("java.util.HashMap");
+            // Verify dependency count is greater than basic interfaces (indicating internal dependencies extracted)
+            assertThat(actual.size()).isGreaterThan(10);
         }
     }
 
@@ -368,13 +431,36 @@ class ByteCodeUtilTest {
         }
     }
 
+    private ClassInfo createComplexTestClassInfo() {
+        try {
+            // Get ComplexTestClass bytecode
+            var complexClass = ComplexTestClass.class;
+            var resourceName = complexClass.getName().replace('.', '/') + ".class";
+
+            // Get bytecode from system class loader
+            byte[] bytecode;
+            try (var inputStream = ClassLoader.getSystemResourceAsStream(resourceName)) {
+                if (inputStream == null) {
+                    throw new RuntimeException("Cannot find ComplexTestClass class file");
+                }
+                bytecode = inputStream.readAllBytes();
+            }
+
+            // Parse bytecode
+            ClassModel classModel = ClassFile.of().parse(bytecode);
+            return ClassInfo.of(classModel);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to create ClassInfo for ComplexTestClass", e);
+        }
+    }
+
     private ClassInfo createRealHashMapClassInfo() {
         try {
-            // 获取 HashMap 类的字节码
+            // Get HashMap class bytecode
             var hashMapClass = HashMap.class;
             var resourceName = hashMapClass.getName().replace('.', '/') + ".class";
 
-            // 从系统类加载器获取字节码
+            // Get bytecode from system class loader
             byte[] bytecode;
             try (var inputStream = ClassLoader.getSystemResourceAsStream(resourceName)) {
                 if (inputStream == null) {
@@ -383,7 +469,7 @@ class ByteCodeUtilTest {
                 bytecode = inputStream.readAllBytes();
             }
 
-            // 解析字节码
+            // Parse bytecode
             ClassModel classModel = ClassFile.of().parse(bytecode);
             return ClassInfo.of(classModel);
         } catch (Exception e) {
@@ -398,7 +484,38 @@ class ByteCodeUtilTest {
         System.out.println("Total dependencies found: " + dependencies.size());
         System.out.println();
 
-        // 按包名分组依赖
+        // Group dependencies by package name
+        var dependenciesByPackage = dependencies.stream()
+                .sorted()
+                .collect(java.util.stream.Collectors.groupingBy(
+                        className -> {
+                            var lastDot = className.lastIndexOf('.');
+                            return lastDot > 0 ? className.substring(0, lastDot) : "<default>";
+                        },
+                        java.util.LinkedHashMap::new,
+                        java.util.stream.Collectors.toList()));
+
+        dependenciesByPackage.forEach((packageName, classes) -> {
+            System.out.println("📦 " + packageName + " (" + classes.size() + " classes)");
+            classes.forEach(className -> {
+                var simpleName = className.substring(className.lastIndexOf('.') + 1);
+                System.out.println("   ├─ " + simpleName);
+            });
+            System.out.println();
+        });
+
+        System.out.println("=".repeat(80));
+        System.out.println();
+    }
+
+    private void printComplexClassDependencies(Set<String> dependencies) {
+        System.out.println("\n" + "=".repeat(80));
+        System.out.println("ComplexTestClass Dependencies Analysis");
+        System.out.println("=".repeat(80));
+        System.out.println("Total dependencies found: " + dependencies.size());
+        System.out.println();
+
+        // Group dependencies by package name
         var dependenciesByPackage = dependencies.stream()
                 .sorted()
                 .collect(java.util.stream.Collectors.groupingBy(

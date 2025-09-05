@@ -13,7 +13,7 @@ import picocli.CommandLine.Spec;
 @Command(
         name = "jarinker",
         mixinStandardHelpOptions = true,
-        version = "0.0.1",
+        version = "0.1.0",
         description = "A tool for shrinking JAR files by removing unused classes.")
 public class RootCommand implements Runnable {
 

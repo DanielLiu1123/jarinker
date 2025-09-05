@@ -1,13 +1,15 @@
-
-dependencies {
-    testImplementation("org.junit.jupiter:junit-jupiter:${junitVersion}")
-    testImplementation("org.junit.jupiter:junit-jupiter-engine:${junitVersion}")
-    testImplementation("org.junit.platform:junit-platform-launcher:1.10.1")
-    testImplementation("org.assertj:assertj-core:${assertjVersion}")
-    testImplementation("org.mockito:mockito-core:${mockitoVersion}")
-    testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
+// Add compiler arguments to access jdeps module
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.addAll([
+            "--add-modules", "jdk.jdeps",
+            "--add-exports", "jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
+    ])
 }
 
 test {
     useJUnitPlatform()
+    jvmArgs([
+            "--add-modules", "jdk.jdeps",
+            "--add-exports", "jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
+    ])
 }
