@@ -23,6 +23,9 @@ compileJava {
 application {
     mainClass = "jarinker.cli.Cli"
     applicationName = "jarinker"
+    applicationDefaultJvmArgs = [
+        "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
+    ]
 }
 
 // https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-options

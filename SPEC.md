@@ -18,9 +18,9 @@
 
 ## 3. 项目结构
 - **core**：核心 API
-    - 依赖分析：封装 `DepsAnalyzer` → `DependencyGraph`
-    - 类级可达性：基于 Class-File API
-    - Shrink：生成并执行裁剪计划
+    - `JdepsAnalyzer`：直接封装 `DepsAnalyzer`，返回 jdeps 的 `Graph<DepsAnalyzer.Node>`
+    - `ClassReachabilityAnalyzer`：基于 Class-File API 的类级可达性分析
+    - `JarShrinker`：JAR 文件收缩执行器
 - **cli**：用户接口
     - 子命令：`analyze`、`shrink`
     - 参数解析与调用 core
@@ -44,47 +44,44 @@ jarinker shrink -c PATH [-c PATH ...] [-o PATH | --in-place] SOURCES...
 - `-o, --output`：输出目录（非原地）
 - `--in-place`：原地收缩（默认 true，`-o` 优先生效）
 
-退出码：`0` 成功，`2` 参数错误，`3` 分析失败，`4` 收缩失败。
+异常处理：使用 JDK 标准异常，如 `IllegalArgumentException`（参数错误）、`IOException`（IO 失败）、`RuntimeException`（其他运行时错误）。
 
 ---
 
 ## 5. 依赖分析
-- **倒排索引**：遍历 cp，建立 `FQCN -> ArtifactId`，支持 Multi-Release JAR。
-- **依赖图**：`DepsAnalyzer` 构建类依赖，映射为工件依赖；过滤 JDK 包。
-- **递归**：从 sources 出发，BFS 递归追踪依赖工件。
+- **直接使用 jdeps**：`JdepsAnalyzer` 直接封装 jdeps 的 `DepsAnalyzer`
+- **返回 jdeps 图**：直接返回 `Graph<DepsAnalyzer.Node>`，无需自定义数据模型
+- **配置支持**：支持 verbose、includeJdk 等配置选项
 
 示例：
 ```java
-DepsAnalyzer depsAnalyzer = new DepsAnalyzer(
-    new JdepsConfiguration.Builder().build(),
-    new JdepsFilter.Builder().build(),
-    JdepsWriter.newSimpleWriter(new PrintWriter(System.out), Analyzer.Type.CLASS),
-    Analyzer.Type.CLASS,
-    false
-);
-Graph<DepsAnalyzer.Node> nodeGraph = depsAnalyzer.dependenceGraph();
+var analyzer = JdepsAnalyzer.builder()
+    .verbose(true)
+    .includeJdk(false)
+    .build();
+
+Graph<DepsAnalyzer.Node> graph = analyzer.analyze(sources, classpath);
 ```
 
 ---
 
 ## 6. Shrink
-- **工件级可达性**：图上 BFS，得到保留工件。
-- **类级可达性**：Class-File API 解析常量池、签名、继承、指令引用；忽略 JDK 类。
-- **ShrinkPlan**：按工件生成保留类/资源清单 → 输出目标路径。
-- **执行**：
-    - JAR：复制保留条目，剔除其余；默认移除签名文件。
-    - DIR：复制或打包。
-    - 原地模式：临时文件 + 原子替换。
+- **类级可达性**：`ClassReachabilityAnalyzer` 使用 Class-File API 分析可达类
+- **JAR 收缩**：`JarShrinker` 直接处理 JAR 文件收缩
+- **简化流程**：
+    - 分析依赖关系（jdeps）
+    - 分析类级可达性（Class-File API）
+    - 执行 JAR 收缩
+- **支持模式**：原地收缩或输出到指定目录
 
 ---
 
 ## 7. 数据模型
 ```java
-record ArtifactId(String value) {}
-final class Artifact { ArtifactId id; Path path; boolean multiRelease; }
-final class DependencyGraph { Set<ArtifactId> nodes; Map<ArtifactId, Set<ArtifactId>> edges; }
-record AnalyzeReport(DependencyGraph graph, Map<ArtifactId,String> idToPath) {}
-final class ShrinkPlan { Map<ArtifactId,Set<String>> keepClasses; Map<ArtifactId,Path> targetOutputs; }
+// 直接使用 jdeps 的数据模型
+Graph<DepsAnalyzer.Node> // jdeps 依赖图
+Map<String, Set<String>> // 类级可达性映射
+record ShrinkResult(int processedJars, long originalSize, long shrunkSize) // 收缩结果
 ```
 
 ---

@@ -4,13 +4,16 @@ import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.AL
 import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_PUBLIC;
 
 import io.goodforgod.graalvm.hint.annotation.ReflectionHint;
+import jarinker.cli.cmd.AnalyzeCommand;
 import jarinker.cli.cmd.RootCommand;
-import jarinker.cli.cmd.analyze.AnalyzeCommand;
-import jarinker.cli.cmd.shrink.ShrinkCommand;
+import jarinker.cli.cmd.ShrinkCommand;
 import picocli.AutoComplete;
 import picocli.CommandLine;
 
 /**
+ * Main entry point for Jarinker CLI.
+ * Delegates to RootCommand for actual command processing.
+ *
  * @author Freeman
  */
 @ReflectionHint(
@@ -20,12 +23,12 @@ import picocli.CommandLine;
 public class Cli {
 
     public static void main(String[] args) {
-
-        var rootCmd = new CommandLine(new RootCommand())
+        int exitCode = new CommandLine(new RootCommand())
                 .addSubcommand("completion", new AutoComplete.GenerateCompletion())
-                .addSubcommand(new AnalyzeCommand())
-                .addSubcommand(new ShrinkCommand());
+                .addSubcommand("analyze", new AnalyzeCommand())
+                .addSubcommand("shrink", new ShrinkCommand())
+                .execute(args);
 
-        System.exit(rootCmd.execute(args));
+        System.exit(exitCode);
     }
 }

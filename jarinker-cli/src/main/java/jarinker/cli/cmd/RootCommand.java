@@ -1,28 +1,25 @@
 package jarinker.cli.cmd;
 
-import picocli.CommandLine.Command;
-import picocli.CommandLine.Model.CommandSpec;
-import picocli.CommandLine.Spec;
+import picocli.CommandLine;
 
 /**
  * Root command for Jarinker CLI.
- * Do not change version property, it will be replaced by gradle.properties:2
  *
  * @author Freeman
  */
-@Command(
+@CommandLine.Command(
         name = "jarinker",
-        mixinStandardHelpOptions = true,
+        description = "A JAR shrinker that analyzes dependencies and removes unused classes",
         version = "0.1.0",
-        description = "A tool for shrinking JAR files by removing unused classes.")
+        mixinStandardHelpOptions = true)
 public class RootCommand implements Runnable {
 
-    @Spec
-    CommandSpec spec;
+    @CommandLine.Spec
+    CommandLine.Model.CommandSpec spec;
 
     @Override
     public void run() {
-        // Show --help if no subcommand/options are provided
+        // Show help when no subcommand is specified
         spec.commandLine().usage(System.out);
     }
 }
