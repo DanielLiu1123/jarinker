@@ -37,73 +37,63 @@ public class ShrinkCommand implements Callable<Integer> {
     @Option(
             names = {"-o", "--output"},
             description = "Output directory for shrunk artifacts")
-    @Nullable
-    private Path outputDir;
-
-    @Option(
-            names = {"--in-place"},
-            description = "Shrink artifacts in place (default: true if no output directory specified)")
-    @Nullable
-    private Boolean inPlace;
+    private @Nullable Path outputDir;
 
     // Filter options
     @Option(
             names = {"--filter-pattern"},
             description = "Filter dependencies matching the given pattern")
-    @Nullable
-    private Pattern filterPattern;
+    private @Nullable Pattern filterPattern;
 
     @Option(
             names = {"--regex"},
             description = "Find dependencies matching the given pattern")
-    @Nullable
-    private Pattern regex;
+    private @Nullable Pattern regex;
 
     @Option(
             names = {"--filter-same-package"},
-            description = "Filter dependencies within the same package (default: true)")
-    @Nullable
+            defaultValue = "true",
+            description = "Filter dependencies within the same package")
     private Boolean filterSamePackage;
 
     @Option(
             names = {"--filter-same-archive"},
-            description = "Filter dependencies within the same archive (default: false)")
-    @Nullable
+            defaultValue = "true",
+            description = "Filter dependencies within the same archive")
     private Boolean filterSameArchive;
 
     @Option(
             names = {"--find-jdk-internals"},
+            defaultValue = "false",
             description = "Find class-level dependencies on JDK internal APIs")
-    @Nullable
     private Boolean findJDKInternals;
 
     @Option(
             names = {"--find-missing-deps"},
+            defaultValue = "false",
             description = "Find missing dependencies")
-    @Nullable
     private Boolean findMissingDeps;
 
     // Source filters
     @Option(
             names = {"--include-pattern"},
             description = "Restrict analysis to classes matching pattern")
-    @Nullable
-    private Pattern includePattern;
+    private @Nullable Pattern includePattern;
 
     @Option(
             names = {"--requires"},
+            defaultValue = "[]",
             description = "Find dependencies matching the given module name (can be specified multiple times)")
     private List<String> requires;
 
     @Option(
             names = {"--target-packages"},
+            defaultValue = "[]",
             description = "Find dependencies matching the given package name (can be specified multiple times)")
     private List<String> targetPackages;
 
     @Override
     public Integer call() throws IOException {
-        validateParameters();
-
         var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
         var graph = analyzer.analyze(sources, classpath);
@@ -112,24 +102,14 @@ public class ShrinkCommand implements Callable<Integer> {
         Map<String, Set<String>> reachableClasses = extractReachableClasses(graph);
 
         // Step 3: Execute shrink
-        var shrinker = JarShrinker.builder().inPlace(isInPlace()).build();
+        var shrinker = JarShrinker.builder().outputDir(outputDir).build();
 
-        var result = shrinker.shrink(sources, reachableClasses, outputDir);
+        var result = shrinker.shrink(sources, reachableClasses);
 
         // Print results
         printShrinkResult(result);
 
         return 0;
-    }
-
-    private void validateParameters() {
-        if (outputDir != null && Boolean.TRUE.equals(inPlace)) {
-            throw new IllegalArgumentException("Cannot specify both --output and --in-place");
-        }
-    }
-
-    private boolean isInPlace() {
-        return outputDir == null || Boolean.TRUE.equals(inPlace);
     }
 
     private Map<String, Set<String>> extractReachableClasses(DependencyGraph graph) {
@@ -174,17 +154,15 @@ public class ShrinkCommand implements Callable<Integer> {
             filterBuilder.regex(regex);
         }
 
-        filterBuilder.filter(
-                filterSamePackage != null ? filterSamePackage : true,
-                filterSameArchive != null ? filterSameArchive : true);
+        filterBuilder.filter(filterSamePackage, filterSameArchive);
 
         if (filterPattern != null) {
             filterBuilder.filter(filterPattern);
         }
 
-        filterBuilder.findJDKInternals(findJDKInternals != null ? findJDKInternals : false);
+        filterBuilder.findJDKInternals(findJDKInternals);
 
-        filterBuilder.findMissingDeps(findMissingDeps != null ? findMissingDeps : false);
+        filterBuilder.findMissingDeps(findMissingDeps);
 
         if (includePattern != null) {
             filterBuilder.includePattern(includePattern);

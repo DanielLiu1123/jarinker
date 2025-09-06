@@ -35,45 +35,42 @@ public class AnalyzeCommand implements Callable<Integer> {
     @Option(
             names = {"--filter-pattern"},
             description = "Filter dependencies matching the given pattern")
-    @Nullable
-    private Pattern filterPattern;
+    private @Nullable Pattern filterPattern;
 
     @Option(
             names = {"--regex"},
             description = "Find dependencies matching the given pattern")
-    @Nullable
-    private Pattern regex;
+    private @Nullable Pattern regex;
 
     @Option(
             names = {"--filter-same-package"},
-            description = "Filter dependencies within the same package (default: true)")
-    @Nullable
+            defaultValue = "true",
+            description = "Filter dependencies within the same package")
     private Boolean filterSamePackage;
 
     @Option(
             names = {"--filter-same-archive"},
-            description = "Filter dependencies within the same archive (default: false)")
-    @Nullable
+            defaultValue = "true",
+            description = "Filter dependencies within the same archive")
     private Boolean filterSameArchive;
 
     @Option(
             names = {"--find-jdk-internals"},
+            defaultValue = "false",
             description = "Find class-level dependencies on JDK internal APIs")
-    @Nullable
     private Boolean findJDKInternals;
 
     @Option(
             names = {"--find-missing-deps"},
+            defaultValue = "false",
             description = "Find missing dependencies")
-    @Nullable
     private Boolean findMissingDeps;
 
     // Source filters
     @Option(
             names = {"--include-pattern"},
             description = "Restrict analysis to classes matching pattern")
-    @Nullable
-    private Pattern includePattern;
+    private @Nullable Pattern includePattern;
 
     @Option(
             names = {"--requires"},
@@ -111,17 +108,15 @@ public class AnalyzeCommand implements Callable<Integer> {
             filterBuilder.regex(regex);
         }
 
-        filterBuilder.filter(
-                filterSamePackage != null ? filterSamePackage : true,
-                filterSameArchive != null ? filterSameArchive : true);
+        filterBuilder.filter(filterSamePackage, filterSameArchive);
 
         if (filterPattern != null) {
             filterBuilder.filter(filterPattern);
         }
 
-        filterBuilder.findJDKInternals(findJDKInternals != null ? findJDKInternals : false);
+        filterBuilder.findJDKInternals(findJDKInternals);
 
-        filterBuilder.findMissingDeps(findMissingDeps != null ? findMissingDeps : false);
+        filterBuilder.findMissingDeps(findMissingDeps);
 
         if (includePattern != null) {
             filterBuilder.includePattern(includePattern);

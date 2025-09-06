@@ -7,8 +7,11 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import lombok.Builder;
+import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -17,25 +20,20 @@ import org.jspecify.annotations.Nullable;
  *
  * @author Freeman
  */
+@Builder
 public class JarShrinker {
 
-    private final boolean inPlace;
-
-    public JarShrinker(boolean inPlace) {
-        this.inPlace = inPlace;
-    }
+    private @Nullable Path outputDir;
 
     /**
      * Shrink JAR files based on reachable classes.
      *
      * @param jarPaths         JAR files to shrink
      * @param reachableClasses map of reachable classes
-     * @param outputDir        output directory (ignored if inPlace is true)
      * @return shrink result
-     * @throws IOException if shrinking fails
      */
-    public ShrinkResult shrink(List<Path> jarPaths, Map<String, Set<String>> reachableClasses, @Nullable Path outputDir)
-            throws IOException {
+    @SneakyThrows
+    public ShrinkResult shrink(List<Path> jarPaths, Map<String, Set<String>> reachableClasses) {
 
         long originalSize = 0;
         long shrunkSize = 0;
@@ -59,17 +57,14 @@ public class JarShrinker {
             originalSize += jarOriginalSize;
 
             Path outputPath;
-            if (inPlace) {
-                // For in-place, use a temporary file first
+            if (outputDir == null) {
+                // no output dir, do it in place
                 Path parent = jarPath.getParent();
                 if (parent == null) {
                     parent = Path.of(".");
                 }
                 outputPath = parent.resolve(jarPath.getFileName() + ".tmp");
             } else {
-                if (outputDir == null) {
-                    throw new IllegalArgumentException("Output directory must be specified if inPlace is false");
-                }
                 if (!Files.exists(outputDir)) {
                     Files.createDirectories(outputDir);
                 }
@@ -80,7 +75,7 @@ public class JarShrinker {
             shrinkJar(jarPath, outputPath, allReachableClasses);
 
             // If in-place, replace the original file
-            if (inPlace) {
+            if (outputDir == null) {
                 Files.move(outputPath, jarPath, StandardCopyOption.REPLACE_EXISTING);
                 outputPath = jarPath;
             }
@@ -93,7 +88,8 @@ public class JarShrinker {
         return new ShrinkResult(processedJars, originalSize, shrunkSize);
     }
 
-    private void shrinkJar(Path inputJar, Path outputJar, Set<String> reachableClasses) throws IOException {
+    @SneakyThrows
+    private static void shrinkJar(Path inputJar, Path outputJar, Set<String> reachableClasses) {
         try (var inputStream = Files.newInputStream(inputJar);
                 var jarInput = new JarInputStream(inputStream);
                 var outputStream = Files.newOutputStream(outputJar);
@@ -142,11 +138,9 @@ public class JarShrinker {
         }
     }
 
-    private void copyEntry(
-            java.util.jar.JarInputStream input, java.util.jar.JarOutputStream output, java.util.jar.JarEntry entry)
-            throws IOException {
+    private static void copyEntry(JarInputStream input, JarOutputStream output, JarEntry entry) throws IOException {
         // Create new entry to avoid issues with compressed entries
-        var newEntry = new java.util.jar.JarEntry(entry.getName());
+        var newEntry = new JarEntry(entry.getName());
         newEntry.setTime(entry.getTime());
 
         output.putNextEntry(newEntry);
@@ -172,31 +166,6 @@ public class JarShrinker {
 
         public long getSavedBytes() {
             return originalSize - shrunkSize;
-        }
-    }
-
-    /**
-     * Create a new builder for JarShrinker.
-     *
-     * @return builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Builder for JarShrinker.
-     */
-    public static class Builder {
-        private boolean inPlace = true;
-
-        public Builder inPlace(boolean inPlace) {
-            this.inPlace = inPlace;
-            return this;
-        }
-
-        public JarShrinker build() {
-            return new JarShrinker(inPlace);
         }
     }
 }
