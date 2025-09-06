@@ -4,13 +4,11 @@ import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JarShrinker;
 import jarinker.core.JdepsAnalyzer;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
@@ -23,7 +21,7 @@ import picocli.CommandLine.Parameters;
  * @author Freeman
  */
 @Command(description = "Shrink artifacts by removing unused classes", mixinStandardHelpOptions = true)
-public class ShrinkCommand implements Callable<Integer> {
+public class ShrinkCommand implements Runnable {
 
     @Parameters(description = "Source artifacts to shrink (JAR files or class directories)", arity = "1..*")
     private List<Path> sources;
@@ -93,7 +91,7 @@ public class ShrinkCommand implements Callable<Integer> {
     private List<String> targetPackages;
 
     @Override
-    public Integer call() throws IOException {
+    public void run() {
         var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
         var graph = analyzer.analyze(sources, classpath);
@@ -108,8 +106,6 @@ public class ShrinkCommand implements Callable<Integer> {
 
         // Print results
         printShrinkResult(result);
-
-        return 0;
     }
 
     private Map<String, Set<String>> extractReachableClasses(DependencyGraph graph) {

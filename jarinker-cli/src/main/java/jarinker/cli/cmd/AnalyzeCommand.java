@@ -3,11 +3,9 @@ package jarinker.cli.cmd;
 import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JdepsAnalyzer;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
@@ -20,7 +18,7 @@ import picocli.CommandLine.Parameters;
  * @author Freeman
  */
 @Command(description = "Analyze dependencies and generate dependency graph", mixinStandardHelpOptions = true)
-public class AnalyzeCommand implements Callable<Integer> {
+public class AnalyzeCommand implements Runnable {
 
     @Parameters(description = "Source artifacts to analyze (JAR files or class directories)", arity = "1..*")
     private List<Path> sources;
@@ -83,8 +81,7 @@ public class AnalyzeCommand implements Callable<Integer> {
     private List<String> targetPackages;
 
     @Override
-    public Integer call() throws IOException {
-
+    public void run() {
         var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
         // Perform analysis
@@ -92,8 +89,6 @@ public class AnalyzeCommand implements Callable<Integer> {
 
         // Print results
         printReport(graph);
-
-        return 0;
     }
 
     /**
