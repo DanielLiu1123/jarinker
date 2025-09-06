@@ -4,8 +4,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.jar.JarInputStream;
+import java.util.jar.JarOutputStream;
 
 /**
  * Shrinks JAR files by removing unused classes.
@@ -24,13 +27,13 @@ public class JarShrinker {
     /**
      * Shrink JAR files based on reachable classes.
      *
-     * @param jarPaths JAR files to shrink
+     * @param jarPaths         JAR files to shrink
      * @param reachableClasses map of reachable classes
-     * @param outputDir output directory (ignored if inPlace is true)
+     * @param outputDir        output directory (ignored if inPlace is true)
      * @return shrink result
      * @throws IOException if shrinking fails
      */
-    public ShrinkResult shrink(java.util.List<Path> jarPaths, Map<String, Set<String>> reachableClasses, Path outputDir)
+    public ShrinkResult shrink(List<Path> jarPaths, Map<String, Set<String>> reachableClasses, Path outputDir)
             throws IOException {
 
         long originalSize = 0;
@@ -88,9 +91,9 @@ public class JarShrinker {
 
     private void shrinkJar(Path inputJar, Path outputJar, Set<String> reachableClasses) throws IOException {
         try (var inputStream = Files.newInputStream(inputJar);
-                var jarInput = new java.util.jar.JarInputStream(inputStream);
+                var jarInput = new JarInputStream(inputStream);
                 var outputStream = Files.newOutputStream(outputJar);
-                var jarOutput = new java.util.jar.JarOutputStream(outputStream)) {
+                var jarOutput = new JarOutputStream(outputStream)) {
 
             // Copy manifest if present
             var manifest = jarInput.getManifest();

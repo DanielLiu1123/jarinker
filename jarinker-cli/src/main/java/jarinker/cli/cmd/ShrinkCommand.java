@@ -10,36 +10,38 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 /**
  * Shrink command for artifact shrinking.
  *
  * @author Freeman
  */
-@CommandLine.Command(description = "Shrink artifacts by removing unused classes", mixinStandardHelpOptions = true)
+@Command(description = "Shrink artifacts by removing unused classes", mixinStandardHelpOptions = true)
 public class ShrinkCommand implements Callable<Integer> {
 
-    @CommandLine.Option(
+    @Parameters(description = "Source artifacts to shrink (JAR files or class directories)", arity = "1..*")
+    private List<Path> sources;
+
+    @Option(
             names = {"-cp", "-classpath", "--class-path"},
             description = "Classpath entries (can be specified multiple times)",
             required = true)
     private List<Path> classpath;
 
-    @CommandLine.Parameters(description = "Source artifacts to shrink (JAR files or class directories)", arity = "1..*")
-    private List<Path> sources;
-
-    @CommandLine.Option(
+    @Option(
             names = {"-o", "--output"},
             description = "Output directory for shrunk artifacts")
     private Path outputDir;
 
-    @CommandLine.Option(
+    @Option(
             names = {"--in-place"},
             description = "Shrink artifacts in place (default: true if no output directory specified)")
     private Boolean inPlace;
 
-    @CommandLine.Option(
+    @Option(
             names = {"--include-jdk"},
             description = "Include JDK classes in analysis (default: false)")
     private boolean includeJdk;

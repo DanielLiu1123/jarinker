@@ -6,30 +6,28 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.concurrent.Callable;
-import picocli.CommandLine;
+import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Parameters;
 
 /**
  * Analyze command for dependency analysis.
  *
  * @author Freeman
  */
-@CommandLine.Command(
-        description = "Analyze dependencies and generate dependency graph",
-        mixinStandardHelpOptions = true)
+@Command(description = "Analyze dependencies and generate dependency graph", mixinStandardHelpOptions = true)
 public class AnalyzeCommand implements Callable<Integer> {
 
-    @CommandLine.Option(
+    @Parameters(description = "Source artifacts to analyze (JAR files or class directories)", arity = "1..*")
+    private List<Path> sources;
+
+    @Option(
             names = {"-cp", "-classpath", "--class-path"},
             description = "Classpath entries (can be specified multiple times)",
             required = true)
     private List<Path> classpath;
 
-    @CommandLine.Parameters(
-            description = "Source artifacts to analyze (JAR files or class directories)",
-            arity = "1..*")
-    private List<Path> sources;
-
-    @CommandLine.Option(
+    @Option(
             names = {"--include-jdk"},
             description = "Include JDK classes in analysis (default: false)")
     private boolean includeJdk;

@@ -2,6 +2,7 @@ package jarinker.core;
 
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.Graph;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -44,7 +45,7 @@ public class DependencyGraph {
      */
     public Set<String> getDependencies(String nodeName) {
         for (var node : graph.nodes()) {
-            if (node.toString().equals(nodeName)) {
+            if (Objects.equals(node.toString(), nodeName)) {
                 return graph.adjacentNodes(node).stream().map(Object::toString).collect(Collectors.toSet());
             }
         }
