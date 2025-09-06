@@ -34,11 +34,55 @@ public class JdepsAnalyzer {
      * @throws IOException if analysis fails
      */
     public DependencyGraph analyze(List<Path> sources, List<Path> classpath) throws IOException {
+        // Try with multi-release support first
+        try {
+            return analyzeWithMultiRelease(sources, classpath);
+        } catch (Exception e) {
+            // If multi-release analysis fails, try with Java 8 compatibility mode
+            if (isMultiReleaseError(e)) {
+                System.err.println("Warning: Multi-release analysis failed, falling back to Java 8 compatibility mode");
+                return analyzeWithJava8Compatibility(sources, classpath);
+            }
+            // Re-throw other exceptions
+            if (e instanceof IOException) {
+                throw e;
+            }
+            throw new IOException("Failed to analyze dependencies: " + e.getMessage(), e);
+        }
+    }
 
+    private boolean isMultiReleaseError(Exception e) {
+        // Check for module system related errors
+        if (e.getCause() instanceof java.lang.module.FindException) {
+            return true;
+        }
+
+        // Check for multi-release JAR issues
+        String message = e.getMessage();
+        if (message != null) {
+            return message.contains("Module") && message.contains("not found")
+                    || message.contains("multi-release jar file but --multi-release option is not set");
+        }
+
+        return false;
+    }
+
+    private DependencyGraph analyzeWithMultiRelease(List<Path> sources, List<Path> classpath) throws IOException {
+        return performAnalysis(sources, classpath, Runtime.version());
+    }
+
+    private DependencyGraph analyzeWithJava8Compatibility(List<Path> sources, List<Path> classpath) throws IOException {
+        return performAnalysis(sources, classpath, Runtime.Version.parse("8"));
+    }
+
+    private DependencyGraph performAnalysis(
+            List<Path> sources, List<Path> classpath, Runtime.Version multiReleaseVersion) throws IOException {
         try {
             // Build jdeps configuration
-            var configBuilder =
-                    new JdepsConfiguration.Builder().multiRelease(Runtime.version()); // Support multi-release JARs
+            var configBuilder = new JdepsConfiguration.Builder();
+            if (multiReleaseVersion != null) {
+                configBuilder.multiRelease(multiReleaseVersion);
+            }
 
             // Add sources
             for (Path source : sources) {

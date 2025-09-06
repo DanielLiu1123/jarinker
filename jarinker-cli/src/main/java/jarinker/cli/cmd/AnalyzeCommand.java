@@ -19,7 +19,7 @@ import picocli.CommandLine;
 public class AnalyzeCommand implements Callable<Integer> {
 
     @CommandLine.Option(
-            names = {"-c", "--cp"},
+            names = {"-cp", "-classpath", "--class-path"},
             description = "Classpath entries (can be specified multiple times)",
             required = true)
     private List<Path> classpath;

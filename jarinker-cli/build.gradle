@@ -23,8 +23,12 @@ compileJava {
 application {
     mainClass = "jarinker.cli.Cli"
     applicationName = "jarinker"
-    applicationDefaultJvmArgs = [
-        "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
+}
+
+compileJava {
+    options.compilerArgs += [
+            "--add-modules", "jdk.jdeps",
+            "--add-exports", "jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
     ]
 }
 
