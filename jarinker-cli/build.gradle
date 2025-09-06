@@ -16,20 +16,20 @@ dependencies {
     testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
 }
 
-// Add compiler arguments to access jdeps module
+def args = [
+        "--add-modules=jdk.jdeps",
+        "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
+        "--add-opens=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED", // use reflection (com.sun.tools.jdeps.DepsAnalyzer.archives)
+]
+
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs.addAll([
-            "--add-modules=jdk.jdeps",
-            "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
-            "-Aproject=${project.group}/${project.name}"
-    ])
+    options.compilerArgs += args
+    options.compilerArgs += "-Aproject=${project.group}/${project.name}"
 }
 
+// make IDEA works
 tasks.withType(JavaExec).configureEach {
-    jvmArgs = [
-            "--add-modules=jdk.jdeps",
-            "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
-    ]
+    jvmArgs += args
 }
 
 application {

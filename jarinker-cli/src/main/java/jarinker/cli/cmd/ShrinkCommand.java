@@ -5,10 +5,10 @@ import jarinker.core.AnalyzerType;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JarShrinker;
 import jarinker.core.JdepsAnalyzer;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
@@ -84,13 +84,11 @@ public class ShrinkCommand implements Runnable {
 
     @Option(
             names = {"--requires"},
-            defaultValue = "[]",
             description = "Find dependencies matching the given module name (can be specified multiple times)")
     private @Nullable List<String> requires;
 
     @Option(
             names = {"--target-packages"},
-            defaultValue = "[]",
             description = "Find dependencies matching the given package name (can be specified multiple times)")
     private @Nullable List<String> targetPackages;
 
@@ -113,36 +111,36 @@ public class ShrinkCommand implements Runnable {
             graph = analyzer.analyze();
         }
 
-        // Step 2: Extract reachable classes from dependency graph
-        Map<String, Set<String>> reachableClasses = extractReachableClasses(graph);
-
-        // Step 3: Execute shrink
         var shrinker = JarShrinker.builder().outputDir(outputDir).build();
 
-        var result = shrinker.shrink(getDependentJars(classpath), reachableClasses);
+        var result = shrinker.shrink(getDependentJars(classpath), graph);
 
         // Print results
         printShrinkResult(result);
     }
 
-    private List<Path> getDependentJars(List<Path> classpath) {
-        return classpath.stream()
-                .filter(p -> p.toString().toLowerCase().endsWith(".jar"))
-                .toList();
-    }
-
-    private Map<String, Set<String>> extractReachableClasses(DependencyGraph graph) {
-        // Extract all classes from the dependency graph
-        Map<String, Set<String>> reachableClasses = new HashMap<>();
-
-        // For simplicity, consider all classes in the graph as reachable
-        // In a real implementation, this would do proper reachability analysis
-        Set<String> allClasses = graph.getNodeNames();
-
-        // If no entry points specified, use all classes as entry points
-        reachableClasses.put("*", allClasses);
-
-        return reachableClasses;
+    @SneakyThrows
+    private static List<Path> getDependentJars(List<Path> classpath) {
+        var result = new ArrayList<Path>();
+        for (Path path : classpath) {
+            if (path.toAbsolutePath().toString().endsWith("/*")) {
+                path = path.getParent();
+            }
+            if (!Files.exists(path)) {
+                continue;
+            }
+            if (Files.isDirectory(path)) {
+                try (var stream = Files.walk(path)) {
+                    stream.filter(Files::isRegularFile)
+                            .filter(e -> e.toAbsolutePath().toString().endsWith(".jar"))
+                            .forEach(result::add);
+                }
+            } else if (Files.isRegularFile(path)
+                    && path.toAbsolutePath().toString().endsWith(".jar")) {
+                result.add(path);
+            }
+        }
+        return result;
     }
 
     private void printShrinkResult(JarShrinker.ShrinkResult result) {

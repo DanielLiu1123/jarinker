@@ -1,11 +1,13 @@
 package jarinker.core;
 
+import com.sun.tools.jdeps.Archive;
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.JdepsConfiguration;
 import com.sun.tools.jdeps.JdepsFilter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import lombok.Builder;
 import lombok.SneakyThrows;
 
@@ -40,7 +42,15 @@ public class JdepsAnalyzer {
             throw new RuntimeException("Jdeps analysis failed");
         }
 
-        return new DependencyGraph(depsAnalyzer.dependenceGraph(), type);
+        return new DependencyGraph(depsAnalyzer.dependenceGraph(), getArchives(depsAnalyzer), type);
+    }
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    private static Set<Archive> getArchives(DepsAnalyzer depsAnalyzer) {
+        var method = DepsAnalyzer.class.getDeclaredMethod("archives");
+        method.setAccessible(true);
+        return (Set<Archive>) method.invoke(depsAnalyzer);
     }
 
     @SneakyThrows

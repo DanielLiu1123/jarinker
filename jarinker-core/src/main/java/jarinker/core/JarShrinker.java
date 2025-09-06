@@ -5,11 +5,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
@@ -33,23 +33,18 @@ public class JarShrinker {
      * @return shrink result
      */
     @SneakyThrows
-    public ShrinkResult shrink(List<Path> jarPaths, Map<String, Set<String>> reachableClasses) {
+    public ShrinkResult shrink(List<Path> jarPaths, DependencyGraph graph) {
 
         long originalSize = 0;
         long shrunkSize = 0;
         int processedJars = 0;
 
-        // Flatten all reachable classes into a single set
-        Set<String> allReachableClasses =
-                reachableClasses.values().stream().flatMap(Set::stream).collect(java.util.stream.Collectors.toSet());
+        Set<String> allReachableClasses = graph.getDependenciesMap().values().stream()
+                .flatMap(Set::stream)
+                .collect(Collectors.toSet());
 
         for (Path jarPath : jarPaths) {
-            if (!Files.exists(jarPath)) {
-                continue;
-            }
-
-            if (!jarPath.toString().toLowerCase().endsWith(".jar")) {
-                // Skip non-JAR files for now
+            if (!Files.exists(jarPath) || !jarPath.toString().endsWith(".jar")) {
                 continue;
             }
 

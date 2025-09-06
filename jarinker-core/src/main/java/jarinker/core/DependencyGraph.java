@@ -1,5 +1,6 @@
 package jarinker.core;
 
+import com.sun.tools.jdeps.Archive;
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.Graph;
 import java.util.HashMap;
@@ -18,11 +19,13 @@ import lombok.Data;
 public class DependencyGraph {
 
     private final Graph<DepsAnalyzer.Node> graph;
+    private final Set<Archive> archives;
     private final AnalyzerType analysisType;
     private final Map<String, Set<String>> dependenciesMap;
 
-    public DependencyGraph(Graph<DepsAnalyzer.Node> graph, AnalyzerType analysisType) {
+    public DependencyGraph(Graph<DepsAnalyzer.Node> graph, Set<Archive> archives, AnalyzerType analysisType) {
         this.graph = graph;
+        this.archives = archives;
         this.analysisType = analysisType;
         this.dependenciesMap = buildDependenciesMap(graph);
     }
@@ -34,15 +37,6 @@ public class DependencyGraph {
      */
     public int getNodeCount() {
         return graph.nodes().size();
-    }
-
-    /**
-     * Get all node names.
-     *
-     * @return set of node names
-     */
-    public Set<String> getNodeNames() {
-        return graph.nodes().stream().map(Object::toString).collect(Collectors.toSet());
     }
 
     /**
