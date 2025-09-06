@@ -1,5 +1,6 @@
 package jarinker.cli.cmd;
 
+import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JarShrinker;
 import jarinker.core.JdepsAnalyzer;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -41,10 +43,52 @@ public class ShrinkCommand implements Callable<Integer> {
             description = "Shrink artifacts in place (default: true if no output directory specified)")
     private Boolean inPlace;
 
+    // Filter options
     @Option(
-            names = {"--include-jdk"},
-            description = "Include JDK classes in analysis (default: false)")
-    private boolean includeJdk;
+            names = {"--filter-pattern"},
+            description = "Filter dependencies matching the given pattern")
+    private String filterPattern;
+
+    @Option(
+            names = {"--regex"},
+            description = "Find dependencies matching the given pattern")
+    private String regex;
+
+    @Option(
+            names = {"--filter-same-package"},
+            description = "Filter dependencies within the same package (default: true)")
+    private boolean filterSamePackage = true;
+
+    @Option(
+            names = {"--filter-same-archive"},
+            description = "Filter dependencies within the same archive (default: false)")
+    private boolean filterSameArchive = false;
+
+    @Option(
+            names = {"--find-jdk-internals"},
+            description = "Find class-level dependencies on JDK internal APIs")
+    private boolean findJDKInternals = false;
+
+    @Option(
+            names = {"--find-missing-deps"},
+            description = "Find missing dependencies")
+    private boolean findMissingDeps = false;
+
+    // Source filters
+    @Option(
+            names = {"--include-pattern"},
+            description = "Restrict analysis to classes matching pattern")
+    private String includePattern;
+
+    @Option(
+            names = {"--requires"},
+            description = "Find dependencies matching the given module name (can be specified multiple times)")
+    private List<String> requires;
+
+    @Option(
+            names = {"--target-packages"},
+            description = "Find dependencies matching the given package name (can be specified multiple times)")
+    private List<String> targetPackages;
 
     @Override
     public Integer call() throws IOException {
@@ -52,7 +96,9 @@ public class ShrinkCommand implements Callable<Integer> {
         validateParameters();
 
         // Step 1: Dependency analysis
-        var jdepsAnalyzer = JdepsAnalyzer.builder().includeJdk(includeJdk).build();
+        var analyzerBuilder = JdepsAnalyzer.builder();
+        analyzerBuilder.jdepsFilter(buildJdepsFilter());
+        var jdepsAnalyzer = analyzerBuilder.build();
 
         DependencyGraph graph = jdepsAnalyzer.analyze(sources, classpath);
 
@@ -108,5 +154,39 @@ public class ShrinkCommand implements Callable<Integer> {
         if (bytes < 1024 * 1024) return String.format("%.1f KB", bytes / 1024.0);
         if (bytes < 1024 * 1024 * 1024) return String.format("%.1f MB", bytes / (1024.0 * 1024.0));
         return String.format("%.1f GB", bytes / (1024.0 * 1024.0 * 1024.0));
+    }
+
+    /**
+     * Build JdepsFilterBuilder with all configured options.
+     *
+     * @return configured JdepsFilterBuilder
+     */
+    private JdepsFilter buildJdepsFilter() {
+        var filterBuilder = new JdepsFilter.Builder();
+
+        // Apply filter options
+        if (regex != null) {
+            filterBuilder.regex(Pattern.compile(regex));
+        }
+
+        filterBuilder.filter(filterSamePackage, filterSameArchive);
+        if (filterPattern != null) {
+            filterBuilder.filter(Pattern.compile(filterPattern));
+        }
+        filterBuilder.findJDKInternals(findJDKInternals);
+        filterBuilder.findMissingDeps(findMissingDeps);
+
+        if (includePattern != null) {
+            filterBuilder.includePattern(Pattern.compile(includePattern));
+        }
+
+        if (requires != null) {
+            Set<String> pkgs = targetPackages != null ? Set.copyOf(targetPackages) : Set.of();
+            for (String require : requires) {
+                filterBuilder.requires(require, pkgs);
+            }
+        }
+
+        return filterBuilder.build();
     }
 }

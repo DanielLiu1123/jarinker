@@ -30,10 +30,25 @@
 ## 4. CLI 规范
 ### analyze
 ```
-jarinker analyze -c PATH [-c PATH ...] SOURCES...
+jarinker analyze -c PATH [-c PATH ...] [OPTIONS] SOURCES...
 ```
 - `-c, --cp`：classpath 条目（必填，可多次）
 - `SOURCES...`：根产物（必填，classes 目录或 JAR）
+
+#### 过滤选项
+- `--filter-pattern <pattern>`：过滤匹配给定模式的依赖关系
+- `--regex <pattern>`：查找匹配给定模式的依赖关系
+- `--filter-same-package`：过滤同一包内的依赖关系（默认：true）
+- `--filter-same-archive`：过滤同一归档内的依赖关系（默认：false）
+- `--find-jdk-internals`：查找对 JDK 内部 API 的类级依赖关系
+- `--find-missing-deps`：查找缺失的依赖关系
+
+#### 源过滤选项
+- `--include-pattern <pattern>`：限制分析匹配模式的类
+- `--requires <module>`：查找匹配给定模块名的依赖关系（可多次指定）
+- `--target-packages <package>`：查找匹配给定包名的依赖关系（可多次指定）
+
+
 
 ### shrink
 ```

@@ -16,13 +16,13 @@ dependencies {
     testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
 }
 
-compileJava {
-    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
-}
-
-application {
-    mainClass = "jarinker.cli.Cli"
-    applicationName = "jarinker"
+// Add compiler arguments to access jdeps module
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.addAll([
+            "--add-modules", "jdk.jdeps",
+            "--add-exports", "jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
+            "-Aproject=${project.group}/${project.name}"
+    ])
 }
 
 tasks.withType(JavaExec).configureEach {
@@ -30,6 +30,11 @@ tasks.withType(JavaExec).configureEach {
             "--add-modules=jdk.jdeps",
             "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
     ]
+}
+
+application {
+    mainClass = "jarinker.cli.Cli"
+    applicationName = "jarinker"
 }
 
 // https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-options

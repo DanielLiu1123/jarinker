@@ -11,6 +11,7 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import lombok.Builder;
 
 /**
  * Wrapper around jdeps DepsAnalyzer for dependency analysis.
@@ -18,13 +19,10 @@ import java.util.List;
  *
  * @author Freeman
  */
+@Builder
 public class JdepsAnalyzer {
 
-    private final boolean includeJdk;
-
-    public JdepsAnalyzer(boolean includeJdk) {
-        this.includeJdk = includeJdk;
-    }
+    private JdepsFilter filter;
 
     /**
      * Analyze dependencies using jdeps.
@@ -108,14 +106,6 @@ public class JdepsAnalyzer {
 
             var config = configBuilder.build();
 
-            // Build filter - create a simple filter that optionally excludes JDK
-            var filterBuilder = new JdepsFilter.Builder();
-            if (!includeJdk) {
-                // Filter out JDK internal packages
-                filterBuilder.filter(true, true);
-            }
-            var filter = filterBuilder.build();
-
             // Create a null writer since we only need the graph
             var writer = JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), Analyzer.Type.CLASS);
 
@@ -134,36 +124,10 @@ public class JdepsAnalyzer {
 
             return new DependencyGraph(graph);
 
-        } catch (Exception e) {
-            if (e instanceof IOException) {
-                throw e;
-            }
+        } catch (IOException e) {
+            throw e;
+        } catch (RuntimeException e) {
             throw new IOException("Failed to analyze dependencies: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Create a new builder for JdepsAnalyzer.
-     *
-     * @return builder instance
-     */
-    public static Builder builder() {
-        return new Builder();
-    }
-
-    /**
-     * Builder for JdepsAnalyzer.
-     */
-    public static class Builder {
-        private boolean includeJdk = false;
-
-        public Builder includeJdk(boolean includeJdk) {
-            this.includeJdk = includeJdk;
-            return this;
-        }
-
-        public JdepsAnalyzer build() {
-            return new JdepsAnalyzer(includeJdk);
         }
     }
 }
