@@ -153,7 +153,7 @@ public class ShrinkCommand implements Runnable {
     }
 
     private void printJarResult(JarShrinker.ShrinkResult.Item jar) {
-        String fileName = jar.before().getFileName().toString();
+        String fileName = jar.before().toFile().getName();
         String beforeSize = formatBytes(jar.beforeSize());
         String afterSize = formatBytes(jar.afterSize());
         String savedSize = formatBytes(jar.getSavedBytes());
@@ -162,7 +162,7 @@ public class ShrinkCommand implements Runnable {
         System.out.println("📦 " + fileName);
         System.out.println("   • Original size: " + beforeSize);
         System.out.println("   • Shrunk size:   " + afterSize);
-        System.out.printf("   • Saved:         %s (%.2f%%)\n", savedSize, reductionPercentage);
+        System.out.printf("   • Saved:         %s (%.2f%%)%n", savedSize, reductionPercentage);
 
         if (!jar.before().equals(jar.after())) {
             System.out.println("   • Output:        " + jar.after());
@@ -187,7 +187,7 @@ public class ShrinkCommand implements Runnable {
         System.out.println("   • Processed JARs: " + result.jars().size());
         System.out.println("   • Total original size: " + formatBytes(totalOriginalSize));
         System.out.println("   • Total shrunk size:   " + formatBytes(totalShrunkSize));
-        System.out.printf("   • Total saved:         %s (%.2f%%)\n", formatBytes(totalSaved), totalReductionPercentage);
+        System.out.printf("   • Total saved:         %s (%.2f%%)%n", formatBytes(totalSaved), totalReductionPercentage);
     }
 
     private String formatBytes(long bytes) {
