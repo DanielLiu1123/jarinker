@@ -1,5 +1,6 @@
 package jarinker.core;
 
+import com.sun.tools.jdeps.Archive;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -28,12 +29,11 @@ public class JarShrinker {
     /**
      * Shrink JAR files based on reachable classes.
      *
-     * @param jarPaths         JAR files to shrink
-     * @param reachableClasses map of reachable classes
+     * @param archives archives to shrink
      * @return shrink result
      */
     @SneakyThrows
-    public ShrinkResult shrink(List<Path> jarPaths, DependencyGraph graph) {
+    public ShrinkResult shrink(List<Archive> archives, DependencyGraph graph) {
 
         long originalSize = 0;
         long shrunkSize = 0;
@@ -43,36 +43,41 @@ public class JarShrinker {
                 .flatMap(Set::stream)
                 .collect(Collectors.toSet());
 
-        for (Path jarPath : jarPaths) {
-            if (!Files.exists(jarPath) || !jarPath.toString().endsWith(".jar")) {
+        for (var archive : archives) {
+            var path = archive.path().orElse(null);
+            if (path == null) {
                 continue;
             }
 
-            long jarOriginalSize = Files.size(jarPath);
+            if (!Files.isRegularFile(path) || !path.toString().endsWith(".jar")) {
+                continue;
+            }
+
+            long jarOriginalSize = Files.size(path);
             originalSize += jarOriginalSize;
 
             Path outputPath;
             if (outputDir == null) {
                 // no output dir, do it in place
-                Path parent = jarPath.getParent();
+                Path parent = path.getParent();
                 if (parent == null) {
                     parent = Path.of(".");
                 }
-                outputPath = parent.resolve(jarPath.getFileName() + ".tmp");
+                outputPath = parent.resolve(path.getFileName() + ".tmp");
             } else {
                 if (!Files.exists(outputDir)) {
                     Files.createDirectories(outputDir);
                 }
-                outputPath = outputDir.resolve(jarPath.getFileName());
+                outputPath = outputDir.resolve(path.getFileName());
             }
 
             // Shrink the JAR
-            shrinkJar(jarPath, outputPath, allReachableClasses);
+            shrinkJar(path, outputPath, allReachableClasses);
 
             // If in-place, replace the original file
             if (outputDir == null) {
-                Files.move(outputPath, jarPath, StandardCopyOption.REPLACE_EXISTING);
-                outputPath = jarPath;
+                Files.move(outputPath, path, StandardCopyOption.REPLACE_EXISTING);
+                outputPath = path;
             }
 
             long jarShrunkSize = Files.size(outputPath);

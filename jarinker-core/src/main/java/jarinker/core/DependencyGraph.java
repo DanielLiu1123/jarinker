@@ -5,6 +5,7 @@ import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.Graph;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -19,13 +20,23 @@ import lombok.Data;
 public class DependencyGraph {
 
     private final Graph<DepsAnalyzer.Node> graph;
+    /**
+     * jar, path
+     */
     private final Set<Archive> archives;
+
+    private final List<Archive> rootArchives;
     private final AnalyzerType analysisType;
     private final Map<String, Set<String>> dependenciesMap;
 
-    public DependencyGraph(Graph<DepsAnalyzer.Node> graph, Set<Archive> archives, AnalyzerType analysisType) {
+    public DependencyGraph(
+            Graph<DepsAnalyzer.Node> graph,
+            Set<Archive> archives,
+            List<Archive> rootArchives,
+            AnalyzerType analysisType) {
         this.graph = graph;
         this.archives = archives;
+        this.rootArchives = rootArchives;
         this.analysisType = analysisType;
         this.dependenciesMap = buildDependenciesMap(graph);
     }

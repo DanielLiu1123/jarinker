@@ -42,7 +42,16 @@ public class JdepsAnalyzer {
             throw new RuntimeException("Jdeps analysis failed");
         }
 
-        return new DependencyGraph(depsAnalyzer.dependenceGraph(), getArchives(depsAnalyzer), type);
+        return new DependencyGraph(
+                depsAnalyzer.dependenceGraph(), getArchives(depsAnalyzer), getRootArchives(depsAnalyzer), type);
+    }
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    private static List<Archive> getRootArchives(DepsAnalyzer depsAnalyzer) {
+        var field = DepsAnalyzer.class.getDeclaredField("rootArchives");
+        field.setAccessible(true);
+        return (List<Archive>) field.get(depsAnalyzer);
     }
 
     @SneakyThrows

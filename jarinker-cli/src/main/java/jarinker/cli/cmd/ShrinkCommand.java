@@ -1,13 +1,13 @@
 package jarinker.cli.cmd;
 
+import com.sun.tools.jdeps.Archive;
 import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.AnalyzerType;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JarShrinker;
 import jarinker.core.JdepsAnalyzer;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -113,34 +113,19 @@ public class ShrinkCommand implements Runnable {
 
         var shrinker = JarShrinker.builder().outputDir(outputDir).build();
 
-        var result = shrinker.shrink(getDependentJars(classpath), graph);
+        var result = shrinker.shrink(getDependentJars(graph), graph);
 
         // Print results
         printShrinkResult(result);
     }
 
     @SneakyThrows
-    private static List<Path> getDependentJars(List<Path> classpath) {
-        var result = new ArrayList<Path>();
-        for (Path path : classpath) {
-            if (path.toAbsolutePath().toString().endsWith("/*")) {
-                path = path.getParent();
-            }
-            if (!Files.exists(path)) {
-                continue;
-            }
-            if (Files.isDirectory(path)) {
-                try (var stream = Files.walk(path)) {
-                    stream.filter(Files::isRegularFile)
-                            .filter(e -> e.toAbsolutePath().toString().endsWith(".jar"))
-                            .forEach(result::add);
-                }
-            } else if (Files.isRegularFile(path)
-                    && path.toAbsolutePath().toString().endsWith(".jar")) {
-                result.add(path);
-            }
+    private static List<Archive> getDependentJars(DependencyGraph graph) {
+        var classpath = new HashSet<>(graph.getArchives());
+        for (var archive : graph.getRootArchives()) {
+            classpath.remove(archive);
         }
-        return result;
+        return List.copyOf(classpath);
     }
 
     private void printShrinkResult(JarShrinker.ShrinkResult result) {
