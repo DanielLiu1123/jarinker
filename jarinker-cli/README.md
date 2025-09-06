@@ -5,5 +5,5 @@ Jarinker CLI.
 ## Build
 
 ```shell
-./gradlew nativeCompile
+./gradlew :jarinker-cli:nativeCompile
 ```

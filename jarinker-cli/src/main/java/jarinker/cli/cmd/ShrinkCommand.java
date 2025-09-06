@@ -129,8 +129,65 @@ public class ShrinkCommand implements Runnable {
     }
 
     private void printShrinkResult(JarShrinker.ShrinkResult result) {
-        System.out.println("=== Shrink Results ===");
-        for (var jar : result.jars()) {}
+        if (result.jars().isEmpty()) {
+            System.out.println("🔍 No JAR files were processed.");
+            return;
+        }
+
+        printHeader("JAR Shrinking Results");
+
+        // Print individual JAR results
+        for (var jar : result.jars()) {
+            printJarResult(jar);
+        }
+
+        // Print summary statistics
+        printSummaryStats(result);
+    }
+
+    private void printHeader(String title) {
+        System.out.println("╭─" + "─".repeat(title.length()) + "─╮");
+        System.out.println("│ " + title + " │");
+        System.out.println("╰─" + "─".repeat(title.length()) + "─╯");
+        System.out.println();
+    }
+
+    private void printJarResult(JarShrinker.ShrinkResult.Item jar) {
+        String fileName = jar.before().getFileName().toString();
+        String beforeSize = formatBytes(jar.beforeSize());
+        String afterSize = formatBytes(jar.afterSize());
+        String savedSize = formatBytes(jar.getSavedBytes());
+        double reductionPercentage = jar.getReductionPercentage();
+
+        System.out.println("📦 " + fileName);
+        System.out.println("   • Original size: " + beforeSize);
+        System.out.println("   • Shrunk size:   " + afterSize);
+        System.out.printf("   • Saved:         %s (%.2f%%)\n", savedSize, reductionPercentage);
+
+        if (!jar.before().equals(jar.after())) {
+            System.out.println("   • Output:        " + jar.after());
+        }
+        System.out.println();
+    }
+
+    private void printSummaryStats(JarShrinker.ShrinkResult result) {
+        long totalOriginalSize = result.jars().stream()
+                .mapToLong(JarShrinker.ShrinkResult.Item::beforeSize)
+                .sum();
+
+        long totalShrunkSize = result.jars().stream()
+                .mapToLong(JarShrinker.ShrinkResult.Item::afterSize)
+                .sum();
+
+        long totalSaved = totalOriginalSize - totalShrunkSize;
+        double totalReductionPercentage =
+                totalOriginalSize > 0 ? ((double) totalSaved / totalOriginalSize) * 100.0 : 0.0;
+
+        System.out.println("📊 Summary:");
+        System.out.println("   • Processed JARs: " + result.jars().size());
+        System.out.println("   • Total original size: " + formatBytes(totalOriginalSize));
+        System.out.println("   • Total shrunk size:   " + formatBytes(totalShrunkSize));
+        System.out.printf("   • Total saved:         %s (%.2f%%)\n", formatBytes(totalSaved), totalReductionPercentage);
     }
 
     private String formatBytes(long bytes) {
