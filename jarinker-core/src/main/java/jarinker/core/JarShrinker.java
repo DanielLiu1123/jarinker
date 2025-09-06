@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -29,21 +30,19 @@ public class JarShrinker {
     /**
      * Shrink JAR files based on reachable classes.
      *
-     * @param archives archives to shrink
+     * @param depsArchives archives to shrink
      * @return shrink result
      */
     @SneakyThrows
-    public ShrinkResult shrink(List<Archive> archives, DependencyGraph graph) {
-
-        long originalSize = 0;
-        long shrunkSize = 0;
-        int processedJars = 0;
+    public ShrinkResult shrink(List<Archive> depsArchives, DependencyGraph graph) {
 
         Set<String> allReachableClasses = graph.getDependenciesMap().values().stream()
                 .flatMap(Set::stream)
                 .collect(Collectors.toSet());
 
-        for (var archive : archives) {
+        var shrinkItem = new ArrayList<ShrinkResult.Item>();
+
+        for (var archive : depsArchives) {
             var path = archive.path().orElse(null);
             if (path == null) {
                 continue;
@@ -54,7 +53,6 @@ public class JarShrinker {
             }
 
             long jarOriginalSize = Files.size(path);
-            originalSize += jarOriginalSize;
 
             Path outputPath;
             if (outputDir == null) {
@@ -81,11 +79,11 @@ public class JarShrinker {
             }
 
             long jarShrunkSize = Files.size(outputPath);
-            shrunkSize += jarShrunkSize;
-            processedJars++;
+
+            shrinkItem.add(new ShrinkResult.Item(path, outputPath, jarOriginalSize, jarShrunkSize));
         }
 
-        return new ShrinkResult(processedJars, originalSize, shrunkSize);
+        return new ShrinkResult(shrinkItem);
     }
 
     @SneakyThrows
@@ -157,15 +155,18 @@ public class JarShrinker {
     /**
      * Result of shrinking operation.
      */
-    public record ShrinkResult(int processedJars, long originalSize, long shrunkSize) {
+    public record ShrinkResult(List<Item> jars) {
 
-        public double getReductionPercentage() {
-            if (originalSize == 0) return 0.0;
-            return ((double) (originalSize - shrunkSize) / originalSize) * 100.0;
-        }
+        record Item(Path before, Path after, long beforeSize, long afterSize) {
 
-        public long getSavedBytes() {
-            return originalSize - shrunkSize;
+            public double getReductionPercentage() {
+                if (beforeSize == 0) return 0.0;
+                return ((double) (beforeSize - afterSize) / beforeSize) * 100.0;
+            }
+
+            public long getSavedBytes() {
+                return beforeSize - afterSize;
+            }
         }
     }
 }
