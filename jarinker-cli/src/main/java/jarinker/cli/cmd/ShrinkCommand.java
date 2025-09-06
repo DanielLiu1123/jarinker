@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -96,9 +97,12 @@ public class ShrinkCommand implements Runnable {
     // === shrink options end ===
 
     @Override
+    @SneakyThrows
     public void run() {
 
+        // Step 1: Analyze dependencies
         DependencyGraph graph;
+
         try (var jdepsConfiguration = JdepsAnalyzer.buildJdepsConfiguration(sources, classpath, Runtime.version())) {
             var analyzer = JdepsAnalyzer.builder()
                     .jdepsFilter(buildJdepsFilter())
@@ -107,8 +111,6 @@ public class ShrinkCommand implements Runnable {
                     .build();
 
             graph = analyzer.analyze();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         }
 
         // Step 2: Extract reachable classes from dependency graph

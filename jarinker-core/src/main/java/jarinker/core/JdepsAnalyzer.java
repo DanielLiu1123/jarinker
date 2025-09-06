@@ -44,7 +44,7 @@ public class JdepsAnalyzer {
             throw new RuntimeException("Jdeps analysis failed");
         }
 
-        return new DependencyGraph(depsAnalyzer.dependenceGraph());
+        return new DependencyGraph(depsAnalyzer.dependenceGraph(), type);
     }
 
     private JdepsWriter buildJdepsWriter() {

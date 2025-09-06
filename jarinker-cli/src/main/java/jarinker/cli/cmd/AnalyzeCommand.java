@@ -4,11 +4,12 @@ import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JdepsAnalyzer;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -93,6 +94,7 @@ public class AnalyzeCommand implements Runnable {
     // === jdeps options end ===
 
     @Override
+    @SneakyThrows
     public void run() {
 
         DependencyGraph graph;
@@ -105,8 +107,6 @@ public class AnalyzeCommand implements Runnable {
                     .build();
 
             graph = analyzer.analyze();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
 
         // Print results
@@ -150,15 +150,107 @@ public class AnalyzeCommand implements Runnable {
     }
 
     private void printReport(DependencyGraph graph) {
-        System.out.println("=== Dependency Analysis Report ===");
-        System.out.println("Total nodes: " + graph.getNodeCount());
+        switch (graph.getAnalysisType()) {
+            case CLASS -> printReportForClass(graph);
+            case PACKAGE -> printReportForPackage(graph);
+            case MODULE -> printReportForModule(graph);
+        }
+    }
 
-        System.out.println("\n=== Dependencies ===");
-        for (String nodeName : graph.getNodeNames()) {
-            var dependencies = graph.getDependencies(nodeName);
-            if (!dependencies.isEmpty()) {
-                System.out.println(nodeName + " -> " + dependencies);
+    private void printReportForModule(DependencyGraph graph) {
+        printHeader("Module Dependency Analysis");
+        printSummaryStats(graph);
+        System.out.println();
+        printDependenciesByType(graph, "Module");
+    }
+
+    private void printReportForClass(DependencyGraph graph) {
+        printHeader("Class Dependency Analysis");
+        printSummaryStats(graph);
+        System.out.println();
+        printDependenciesByType(graph, "Class");
+    }
+
+    private void printReportForPackage(DependencyGraph graph) {
+        printHeader("Package Dependency Analysis");
+        printSummaryStats(graph);
+        System.out.println();
+        printDependenciesByType(graph, "Package");
+    }
+
+    private void printHeader(String title) {
+        System.out.println("╭─" + "─".repeat(title.length()) + "─╮");
+        System.out.println("│ " + title + " │");
+        System.out.println("╰─" + "─".repeat(title.length()) + "─╯");
+        System.out.println();
+    }
+
+    private void printSummaryStats(DependencyGraph graph) {
+        var dependenciesMap = graph.getDependenciesMap();
+
+        // Calculate statistics excluding JDK dependencies
+        int nodesWithNonJdkDeps = 0;
+        int totalNonJdkDependencies = 0;
+
+        for (var entry : dependenciesMap.entrySet()) {
+            Set<String> nonJdkDeps = entry.getValue().stream()
+                    .filter(dep -> !isJdkDependency(dep))
+                    .collect(java.util.stream.Collectors.toSet());
+
+            if (!nonJdkDeps.isEmpty()) {
+                nodesWithNonJdkDeps++;
+                totalNonJdkDependencies += nonJdkDeps.size();
             }
         }
+
+        System.out.println("📊 Statistics (excluding JDK dependencies):");
+        System.out.println("   • Total nodes: " + graph.getNodeCount());
+        System.out.println("   • Nodes with non-JDK dependencies: " + nodesWithNonJdkDeps);
+        System.out.println("   • Total non-JDK dependencies: " + totalNonJdkDependencies);
+        System.out.println("   • Root nodes: " + graph.getRootNodes().size());
+        System.out.println("   • Leaf nodes: " + graph.getLeafNodes().size());
+    }
+
+    private void printDependenciesByType(DependencyGraph graph, String nodeType) {
+        var dependenciesMap = graph.getDependenciesMap();
+
+        if (dependenciesMap.isEmpty()) {
+            System.out.println("🔍 No dependencies found.");
+            return;
+        }
+
+        System.out.println("🔗 " + nodeType + " Dependencies:");
+        System.out.println();
+
+        dependenciesMap.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
+            String source = entry.getKey();
+            Set<String> dependencies = entry.getValue();
+
+            // Filter out JDK dependencies
+            Set<String> filteredDependencies = dependencies.stream()
+                    .filter(dep -> !isJdkDependency(dep))
+                    .collect(java.util.stream.Collectors.toSet());
+
+            if (!filteredDependencies.isEmpty()) {
+                System.out.println("📦 " + source);
+                filteredDependencies.stream().sorted().forEach(dep -> System.out.println("   └─ " + dep));
+                System.out.println();
+            }
+        });
+    }
+
+    /**
+     * Check if a dependency is a JDK internal dependency that should be filtered out.
+     *
+     * @param dependency the dependency name
+     * @return true if it's a JDK dependency
+     */
+    private static boolean isJdkDependency(String dependency) {
+        return dependency.startsWith("java.")
+                || dependency.startsWith("javax.")
+                || dependency.startsWith("jdk.")
+                || dependency.startsWith("sun.")
+                || dependency.startsWith("com.sun.")
+                || dependency.contains("JDK removed internal API");
     }
 }
