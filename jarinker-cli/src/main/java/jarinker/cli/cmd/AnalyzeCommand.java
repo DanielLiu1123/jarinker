@@ -1,7 +1,7 @@
 package jarinker.cli.cmd;
 
-import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.JdepsFilter;
+import jarinker.core.AnalyzerType;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JdepsAnalyzer;
 import java.nio.file.Path;
@@ -87,9 +87,9 @@ public class AnalyzeCommand implements Runnable {
 
     @Option(
             names = {"--type"},
-            description = "Analysis type (class, package, module...), see com.sun.tools.jdeps.Analyzer.Type",
+            description = "Analysis type (class, package, module), see jarinker.core.AnalyzerType",
             defaultValue = "class")
-    private Analyzer.Type type;
+    private AnalyzerType type;
 
     // === jdeps options end ===
 

@@ -1,6 +1,5 @@
 package jarinker.core;
 
-import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.JdepsConfiguration;
 import com.sun.tools.jdeps.JdepsFilter;
@@ -24,7 +23,7 @@ public class JdepsAnalyzer {
 
     private JdepsFilter jdepsFilter;
     private JdepsConfiguration jdepsConfiguration;
-    private Analyzer.Type type;
+    private AnalyzerType type;
 
     /**
      * Analyze dependencies using jdeps.
@@ -37,7 +36,8 @@ public class JdepsAnalyzer {
 
     @SneakyThrows
     private DependencyGraph doAnalysis() {
-        var depsAnalyzer = new DepsAnalyzer(jdepsConfiguration, jdepsFilter, buildJdepsWriter(), type, false);
+        var depsAnalyzer = new DepsAnalyzer(
+                jdepsConfiguration, jdepsFilter, buildJdepsWriter(), type.toJdepsAnalysisType(), false);
 
         var ok = depsAnalyzer.run(false, Integer.MAX_VALUE);
         if (!ok) {
@@ -48,7 +48,7 @@ public class JdepsAnalyzer {
     }
 
     private JdepsWriter buildJdepsWriter() {
-        return JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), type);
+        return JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), type.toJdepsAnalysisType());
     }
 
     @SneakyThrows

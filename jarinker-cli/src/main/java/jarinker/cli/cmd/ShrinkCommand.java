@@ -1,7 +1,7 @@
 package jarinker.cli.cmd;
 
-import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.JdepsFilter;
+import jarinker.core.AnalyzerType;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JarShrinker;
 import jarinker.core.JdepsAnalyzer;
@@ -107,7 +107,7 @@ public class ShrinkCommand implements Runnable {
             var analyzer = JdepsAnalyzer.builder()
                     .jdepsFilter(buildJdepsFilter())
                     .jdepsConfiguration(jdepsConfiguration)
-                    .type(Analyzer.Type.CLASS)
+                    .type(AnalyzerType.CLASS)
                     .build();
 
             graph = analyzer.analyze();

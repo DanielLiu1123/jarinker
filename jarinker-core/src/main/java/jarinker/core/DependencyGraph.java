@@ -1,6 +1,5 @@
 package jarinker.core;
 
-import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.Graph;
 import java.util.LinkedHashMap;
@@ -19,7 +18,7 @@ import lombok.Data;
 public class DependencyGraph {
 
     private final Graph<DepsAnalyzer.Node> graph;
-    private final Analyzer.Type analysisType;
+    private final AnalyzerType analysisType;
 
     /**
      * Get the number of nodes in the graph.
