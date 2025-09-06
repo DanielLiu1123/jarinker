@@ -125,12 +125,7 @@ public class AnalyzeCommand implements Runnable {
             filterBuilder.regex(regex);
         }
 
-        // For package analysis, we want to see dependencies between packages in the same archive
-        // For class analysis, we might want to filter same package dependencies
-        boolean shouldFilterSamePackage = filterSamePackage != null ? filterSamePackage : (type == AnalyzerType.CLASS);
-        boolean shouldFilterSameArchive = filterSameArchive != null ? filterSameArchive : false;
-
-        filterBuilder.filter(shouldFilterSamePackage, shouldFilterSameArchive);
+        filterBuilder.filter(filterSamePackage, filterSameArchive);
 
         if (filterPattern != null) {
             filterBuilder.filter(filterPattern);
@@ -164,21 +159,21 @@ public class AnalyzeCommand implements Runnable {
 
     private void printReportForModule(DependencyGraph graph) {
         printHeader("Module Dependency Analysis");
-        printDependenciesByType(graph, "Module");
+        printDependenciesByType(graph);
         System.out.println();
         printSummaryStats(graph);
     }
 
     private void printReportForClass(DependencyGraph graph) {
         printHeader("Class Dependency Analysis");
-        printDependenciesByType(graph, "Class");
+        printDependenciesByType(graph);
         System.out.println();
         printSummaryStats(graph);
     }
 
     private void printReportForPackage(DependencyGraph graph) {
         printHeader("Package Dependency Analysis");
-        printDependenciesByType(graph, "Package");
+        printDependenciesByType(graph);
         System.out.println();
         printSummaryStats(graph);
     }
@@ -219,7 +214,7 @@ public class AnalyzeCommand implements Runnable {
         System.out.printf("   • Unused " + nodeTypePlural + ": %d (%.2f%%)\n", unusedNodes, unusedRate);
     }
 
-    private void printDependenciesByType(DependencyGraph graph, String nodeType) {
+    private void printDependenciesByType(DependencyGraph graph) {
         var dependenciesMap = graph.getDependenciesMap();
 
         if (dependenciesMap.isEmpty()) {
@@ -248,29 +243,15 @@ public class AnalyzeCommand implements Runnable {
         });
     }
 
-    /**
-     * Check if a dependency is in the same scope (package/module) as the source
-     * and should be filtered out.
-     *
-     * @param source the source node name
-     * @param dependency the dependency node name
-     * @return true if the dependency should be filtered out
-     */
     private boolean isSameScopeAsSelf(String source, String dependency) {
-        switch (type) {
-            case PACKAGE -> {
-                // For package analysis, filter dependencies within the same package
-                return extractPackageName(source).equals(extractPackageName(dependency));
-            }
-            case MODULE -> {
-                // For module analysis, filter dependencies within the same module
-                return extractModuleName(source).equals(extractModuleName(dependency));
-            }
-            default -> {
-                // For class analysis, don't filter same scope dependencies
-                return false;
-            }
-        }
+        return switch (type) {
+            case PACKAGE -> // For package analysis, filter dependencies within the same package
+                extractPackageName(source).equals(extractPackageName(dependency));
+            case MODULE -> // For module analysis, filter dependencies within the same module
+                extractModuleName(source).equals(extractModuleName(dependency));
+            case CLASS -> // For class analysis, don't filter same scope dependencies
+                false;
+        };
     }
 
     /**
@@ -280,7 +261,7 @@ public class AnalyzeCommand implements Runnable {
      * @param nodeName the node name
      * @return the package name
      */
-    private String extractPackageName(String nodeName) {
+    private static String extractPackageName(String nodeName) {
         // Handle format like "quick-start-0.1.0.jar/com.example"
         int slashIndex = nodeName.indexOf('/');
         if (slashIndex != -1) {
@@ -296,7 +277,7 @@ public class AnalyzeCommand implements Runnable {
      * @param nodeName the node name
      * @return the module name
      */
-    private String extractModuleName(String nodeName) {
+    private static String extractModuleName(String nodeName) {
         // Handle format like "quick-start-0.1.0.jar/module.name"
         int slashIndex = nodeName.indexOf('/');
         if (slashIndex != -1) {
@@ -305,43 +286,12 @@ public class AnalyzeCommand implements Runnable {
         return nodeName;
     }
 
-    /**
-     * Get the node type name based on the analysis type.
-     *
-     * @return the node type name (class, package, or module)
-     */
-    private String getNodeTypeName() {
-        return switch (type) {
-            case CLASS -> "class";
-            case PACKAGE -> "package";
-            case MODULE -> "module";
-        };
-    }
-
-    /**
-     * Get the plural form of the node type name based on the analysis type.
-     *
-     * @return the plural node type name (classes, packages, or modules)
-     */
     private String getNodeTypePlural() {
         return switch (type) {
-            case CLASS -> "classes";
             case PACKAGE -> "packages";
             case MODULE -> "modules";
+            case CLASS -> "classes";
         };
-    }
-
-    /**
-     * Capitalize the first letter of a string.
-     *
-     * @param str the string to capitalize
-     * @return the capitalized string
-     */
-    private static String capitalize(String str) {
-        if (str == null || str.isEmpty()) {
-            return str;
-        }
-        return str.substring(0, 1).toUpperCase() + str.substring(1);
     }
 
     /**

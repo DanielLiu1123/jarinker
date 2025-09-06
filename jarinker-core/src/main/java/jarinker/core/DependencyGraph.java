@@ -2,9 +2,9 @@ package jarinker.core;
 
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.Graph;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.Data;
@@ -19,6 +19,13 @@ public class DependencyGraph {
 
     private final Graph<DepsAnalyzer.Node> graph;
     private final AnalyzerType analysisType;
+    private final Map<String, Set<String>> dependenciesMap;
+
+    public DependencyGraph(Graph<DepsAnalyzer.Node> graph, AnalyzerType analysisType) {
+        this.graph = graph;
+        this.analysisType = analysisType;
+        this.dependenciesMap = buildDependenciesMap(graph);
+    }
 
     /**
      * Get the number of nodes in the graph.
@@ -39,62 +46,19 @@ public class DependencyGraph {
     }
 
     /**
-     * Get dependencies for a node.
-     *
-     * @param nodeName the node name
-     * @return set of dependency names
-     */
-    public Set<String> getDependencies(String nodeName) {
-        for (var node : graph.nodes()) {
-            if (Objects.equals(node.toString(), nodeName)) {
-                return graph.adjacentNodes(node).stream().map(Object::toString).collect(Collectors.toSet());
-            }
-        }
-        return Set.of();
-    }
-
-    /**
      * Get dependencies grouped by their source for better visualization.
      *
      * @return map of node name to its dependencies
      */
-    public Map<String, Set<String>> getDependenciesMap() {
-        Map<String, Set<String>> result = new LinkedHashMap<>();
-        for (String nodeName : getNodeNames()) {
-            Set<String> dependencies = getDependencies(nodeName);
+    private static Map<String, Set<String>> buildDependenciesMap(Graph<DepsAnalyzer.Node> graph) {
+        var result = new HashMap<String, Set<String>>();
+        for (var node : graph.nodes()) {
+            var dependencies =
+                    graph.adjacentNodes(node).stream().map(Object::toString).collect(Collectors.toSet());
             if (!dependencies.isEmpty()) {
-                result.put(nodeName, dependencies);
+                result.computeIfAbsent(node.toString(), k -> new HashSet<>()).addAll(dependencies);
             }
         }
         return result;
-    }
-
-    /**
-     * Get nodes that have no dependencies (leaf nodes).
-     *
-     * @return set of leaf node names
-     */
-    public Set<String> getLeafNodes() {
-        return getNodeNames().stream()
-                .filter(nodeName -> getDependencies(nodeName).isEmpty())
-                .collect(Collectors.toSet());
-    }
-
-    /**
-     * Get nodes that are not depended upon by any other node (root nodes).
-     *
-     * @return set of root node names
-     */
-    public Set<String> getRootNodes() {
-        Set<String> allNodes = getNodeNames();
-        Set<String> dependedUpon =
-                getDependenciesMap().values().stream().flatMap(Set::stream).collect(Collectors.toSet());
-
-        return allNodes.stream().filter(node -> !dependedUpon.contains(node)).collect(Collectors.toSet());
-    }
-
-    @Override
-    public String toString() {
-        return "DependencyGraph{nodeCount=" + getNodeCount() + ", type=" + analysisType + "}";
     }
 }

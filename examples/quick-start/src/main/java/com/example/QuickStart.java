@@ -16,6 +16,7 @@ public class QuickStart {
         System.out.println("Lists result: " + list);
 
         // Use StringUtils from different package
-        System.out.println(StringUtils.split("1,2,3", ","));
+        var split = StringUtils.split("1,2,3", ",");
+        System.out.println(split);
     }
 }
