@@ -117,10 +117,16 @@ public class ShrinkCommand implements Runnable {
         // Step 3: Execute shrink
         var shrinker = JarShrinker.builder().outputDir(outputDir).build();
 
-        var result = shrinker.shrink(sources, reachableClasses);
+        var result = shrinker.shrink(getDependentJars(classpath), reachableClasses);
 
         // Print results
         printShrinkResult(result);
+    }
+
+    private List<Path> getDependentJars(List<Path> classpath) {
+        return classpath.stream()
+                .filter(p -> p.toString().toLowerCase().endsWith(".jar"))
+                .toList();
     }
 
     private Map<String, Set<String>> extractReachableClasses(DependencyGraph graph) {

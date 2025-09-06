@@ -23,11 +23,16 @@ import picocli.CommandLine;
 public class Cli {
 
     public static void main(String[] args) {
-        int exitCode = new CommandLine(new RootCommand())
-                .addSubcommand("completion", new AutoComplete.GenerateCompletion())
-                .addSubcommand("analyze", new AnalyzeCommand())
-                .addSubcommand("shrink", new ShrinkCommand())
-                .execute(args);
+        var root = new CommandLine(new RootCommand());
+
+        root.addSubcommand("completion", new AutoComplete.GenerateCompletion());
+        root.addSubcommand("analyze", new AnalyzeCommand());
+        root.addSubcommand("shrink", new ShrinkCommand());
+
+        // Allow case-insensitive enum values
+        root.setCaseInsensitiveEnumValuesAllowed(true);
+
+        int exitCode = root.execute(args);
 
         System.exit(exitCode);
     }
