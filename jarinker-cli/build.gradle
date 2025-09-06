@@ -19,7 +19,6 @@ dependencies {
 def args = [
         "--add-modules=jdk.jdeps",
         "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
-        "--add-opens=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED", // use reflection (com.sun.tools.jdeps.DepsAnalyzer.archives)
 ]
 
 tasks.withType(JavaCompile).configureEach {
@@ -30,6 +29,7 @@ tasks.withType(JavaCompile).configureEach {
 // make IDEA works
 tasks.withType(JavaExec).configureEach {
     jvmArgs += args
+    jvmArgs += "--add-opens=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
 }
 
 application {
