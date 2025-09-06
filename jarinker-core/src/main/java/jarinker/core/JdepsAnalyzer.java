@@ -55,13 +55,18 @@ public class JdepsAnalyzer {
         // Add classpath
         for (Path cp : classpath) {
             cp = cp.toAbsolutePath().toString().endsWith("/*") ? cp.getParent() : cp;
-            if (cp != null && Files.exists(cp) && Files.isDirectory(cp)) {
+            if (cp == null || !Files.exists(cp)) {
+                continue;
+            }
+            if (Files.isDirectory(cp)) {
                 try (var stream = Files.walk(cp)) {
                     stream.filter(Files::isRegularFile)
-                            .filter(p -> p.getFileName().toString().endsWith(".jar"))
-                            .map(p -> p.toAbsolutePath().toString())
+                            .map(e -> e.toAbsolutePath().toString())
+                            .filter(p -> p.endsWith(".jar"))
                             .forEach(configBuilder::addClassPath);
                 }
+            } else {
+                configBuilder.addClassPath(cp.toAbsolutePath().toString());
             }
         }
 
