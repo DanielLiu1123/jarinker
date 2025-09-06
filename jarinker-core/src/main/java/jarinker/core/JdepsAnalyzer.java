@@ -1,9 +1,14 @@
 package jarinker.core;
 
+import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_DECLARED;
+import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_DECLARED_METHODS;
+import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_PUBLIC;
+
 import com.sun.tools.jdeps.Archive;
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.JdepsConfiguration;
 import com.sun.tools.jdeps.JdepsFilter;
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -18,6 +23,9 @@ import lombok.SneakyThrows;
  * @author Freeman
  */
 @Builder
+@ReflectionHint(
+        types = {JdepsConfiguration.Builder.class},
+        value = {ALL_DECLARED, ALL_PUBLIC, ALL_DECLARED_METHODS})
 public class JdepsAnalyzer {
 
     private JdepsFilter jdepsFilter;

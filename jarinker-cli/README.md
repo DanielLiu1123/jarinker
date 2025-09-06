@@ -6,4 +6,5 @@ Jarinker CLI.
 
 ```shell
 ./gradlew :jarinker-cli:nativeCompile
+sudo cp jarinker-cli/build/native/nativeCompile/jarinker /usr/local/bin/
 ```

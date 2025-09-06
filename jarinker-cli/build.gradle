@@ -10,8 +10,8 @@ dependencies {
     annotationProcessor("info.picocli:picocli-codegen:${picocliVersion}")
 
     // https://github.com/GoodforGod/graalvm-hint
-    annotationProcessor("io.goodforgod:graalvm-hint-processor:${graalvmHintProcessor}")
     compileOnly("io.goodforgod:graalvm-hint-annotations:${graalvmHintProcessor}")
+    annotationProcessor("io.goodforgod:graalvm-hint-processor:${graalvmHintProcessor}")
 
     testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
 }

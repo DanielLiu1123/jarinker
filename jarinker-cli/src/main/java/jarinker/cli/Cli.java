@@ -3,6 +3,7 @@ package jarinker.cli;
 import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_DECLARED;
 import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_PUBLIC;
 
+import com.sun.tools.jdeps.JdepsConfiguration;
 import io.goodforgod.graalvm.hint.annotation.ReflectionHint;
 import jarinker.cli.cmd.AnalyzeCommand;
 import jarinker.cli.cmd.RootCommand;
@@ -17,7 +18,7 @@ import picocli.CommandLine;
  * @author Freeman
  */
 @ReflectionHint(
-        types = AutoComplete.GenerateCompletion.class,
+        types = {AutoComplete.GenerateCompletion.class, JdepsConfiguration.Builder.class},
         value = {ALL_DECLARED, ALL_PUBLIC
         }) // for GenerateCompletion, picocli only generate graalvm reflection config for "your own" commands
 public class Cli {
