@@ -23,21 +23,11 @@ compileJava {
 application {
     mainClass = "jarinker.cli.Cli"
     applicationName = "jarinker"
-    applicationDefaultJvmArgs = [
-        "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
-    ]
 }
-//
-//compileJava {
-//    options.compilerArgs += [
-//            "--add-modules", "jdk.jdeps",
-//            "--add-exports", "jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
-//    ]
-//}
 
-// Add JVM args for running in IDEA
 tasks.withType(JavaExec).configureEach {
     jvmArgs = [
+            "--add-modules=jdk.jdeps",
             "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
     ]
 }
