@@ -1,11 +1,15 @@
 package jarinker.cli.cmd;
 
+import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JdepsAnalyzer;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -31,38 +35,45 @@ public class AnalyzeCommand implements Callable<Integer> {
     @Option(
             names = {"--filter-pattern"},
             description = "Filter dependencies matching the given pattern")
-    private String filterPattern;
+    @Nullable
+    private Pattern filterPattern;
 
     @Option(
             names = {"--regex"},
             description = "Find dependencies matching the given pattern")
-    private String regex;
+    @Nullable
+    private Pattern regex;
 
     @Option(
             names = {"--filter-same-package"},
             description = "Filter dependencies within the same package (default: true)")
-    private boolean filterSamePackage = true;
+    @Nullable
+    private Boolean filterSamePackage;
 
     @Option(
             names = {"--filter-same-archive"},
             description = "Filter dependencies within the same archive (default: false)")
-    private boolean filterSameArchive = false;
+    @Nullable
+    private Boolean filterSameArchive;
 
     @Option(
             names = {"--find-jdk-internals"},
             description = "Find class-level dependencies on JDK internal APIs")
-    private boolean findJDKInternals = false;
+    @Nullable
+    private Boolean findJDKInternals;
 
     @Option(
             names = {"--find-missing-deps"},
             description = "Find missing dependencies")
-    private boolean findMissingDeps = false;
+    @Nullable
+    private Boolean findMissingDeps;
 
     // Source filters
     @Option(
             names = {"--include-pattern"},
             description = "Restrict analysis to classes matching pattern")
-    private String includePattern;
+    @Nullable
+    private Pattern includePattern;
 
     @Option(
             names = {"--requires"},
@@ -76,18 +87,11 @@ public class AnalyzeCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
-        // Build analyzer with filter
-        var filter = buildJdepsFilter();
-        var analyzerBuilder = JdepsAnalyzer.builder();
 
-        if (filter != null) {
-            analyzerBuilder.jdepsFilter(filter);
-        }
-
-        var analyzer = analyzerBuilder.build();
+        var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
         // Perform analysis
-        DependencyGraph graph = analyzer.analyze(sources, classpath);
+        var graph = analyzer.analyze(sources, classpath);
 
         // Print results
         printReport(graph);
@@ -100,40 +104,37 @@ public class AnalyzeCommand implements Callable<Integer> {
      *
      * @return configured JdepsFilterBuilder
      */
-    private JdepsFilterBuilder buildJdepsFilter() {
-        var filterBuilder = new JdepsFilterBuilder();
-
-        // Apply filter options
-        if (filterPattern != null) {
-            filterBuilder.filterPattern(filterPattern);
-        }
+    private JdepsFilter buildJdepsFilter() {
+        var filterBuilder = new JdepsFilter.Builder();
 
         if (regex != null) {
             filterBuilder.regex(regex);
         }
 
-        filterBuilder.filterSamePackage(filterSamePackage);
-        filterBuilder.filterSameArchive(filterSameArchive);
-        filterBuilder.findJDKInternals(findJDKInternals);
-        filterBuilder.findMissingDeps(findMissingDeps);
+        filterBuilder.filter(
+                filterSamePackage != null ? filterSamePackage : true,
+                filterSameArchive != null ? filterSameArchive : true);
+
+        if (filterPattern != null) {
+            filterBuilder.filter(filterPattern);
+        }
+
+        filterBuilder.findJDKInternals(findJDKInternals != null ? findJDKInternals : false);
+
+        filterBuilder.findMissingDeps(findMissingDeps != null ? findMissingDeps : false);
 
         if (includePattern != null) {
             filterBuilder.includePattern(includePattern);
         }
 
         if (requires != null) {
+            Set<String> pkgs = targetPackages != null ? Set.copyOf(targetPackages) : Set.of();
             for (String require : requires) {
-                filterBuilder.addRequire(require);
+                filterBuilder.requires(require, pkgs);
             }
         }
 
-        if (targetPackages != null) {
-            for (String pkg : targetPackages) {
-                filterBuilder.addTargetPackage(pkg);
-            }
-        }
-
-        return filterBuilder;
+        return filterBuilder.build();
     }
 
     private void printReport(DependencyGraph graph) {

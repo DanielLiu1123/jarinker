@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
+import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -36,49 +37,58 @@ public class ShrinkCommand implements Callable<Integer> {
     @Option(
             names = {"-o", "--output"},
             description = "Output directory for shrunk artifacts")
+    @Nullable
     private Path outputDir;
 
     @Option(
             names = {"--in-place"},
             description = "Shrink artifacts in place (default: true if no output directory specified)")
+    @Nullable
     private Boolean inPlace;
 
     // Filter options
     @Option(
             names = {"--filter-pattern"},
             description = "Filter dependencies matching the given pattern")
-    private String filterPattern;
+    @Nullable
+    private Pattern filterPattern;
 
     @Option(
             names = {"--regex"},
             description = "Find dependencies matching the given pattern")
-    private String regex;
+    @Nullable
+    private Pattern regex;
 
     @Option(
             names = {"--filter-same-package"},
             description = "Filter dependencies within the same package (default: true)")
-    private boolean filterSamePackage = true;
+    @Nullable
+    private Boolean filterSamePackage;
 
     @Option(
             names = {"--filter-same-archive"},
             description = "Filter dependencies within the same archive (default: false)")
-    private boolean filterSameArchive = false;
+    @Nullable
+    private Boolean filterSameArchive;
 
     @Option(
             names = {"--find-jdk-internals"},
             description = "Find class-level dependencies on JDK internal APIs")
-    private boolean findJDKInternals = false;
+    @Nullable
+    private Boolean findJDKInternals;
 
     @Option(
             names = {"--find-missing-deps"},
             description = "Find missing dependencies")
-    private boolean findMissingDeps = false;
+    @Nullable
+    private Boolean findMissingDeps;
 
     // Source filters
     @Option(
             names = {"--include-pattern"},
             description = "Restrict analysis to classes matching pattern")
-    private String includePattern;
+    @Nullable
+    private Pattern includePattern;
 
     @Option(
             names = {"--requires"},
@@ -92,15 +102,11 @@ public class ShrinkCommand implements Callable<Integer> {
 
     @Override
     public Integer call() throws IOException {
-        // Validate parameters
         validateParameters();
 
-        // Step 1: Dependency analysis
-        var analyzerBuilder = JdepsAnalyzer.builder();
-        analyzerBuilder.jdepsFilter(buildJdepsFilter());
-        var jdepsAnalyzer = analyzerBuilder.build();
+        var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
-        DependencyGraph graph = jdepsAnalyzer.analyze(sources, classpath);
+        var graph = analyzer.analyze(sources, classpath);
 
         // Step 2: Extract reachable classes from dependency graph
         Map<String, Set<String>> reachableClasses = extractReachableClasses(graph);
@@ -164,20 +170,24 @@ public class ShrinkCommand implements Callable<Integer> {
     private JdepsFilter buildJdepsFilter() {
         var filterBuilder = new JdepsFilter.Builder();
 
-        // Apply filter options
         if (regex != null) {
-            filterBuilder.regex(Pattern.compile(regex));
+            filterBuilder.regex(regex);
         }
 
-        filterBuilder.filter(filterSamePackage, filterSameArchive);
+        filterBuilder.filter(
+                filterSamePackage != null ? filterSamePackage : true,
+                filterSameArchive != null ? filterSameArchive : true);
+
         if (filterPattern != null) {
-            filterBuilder.filter(Pattern.compile(filterPattern));
+            filterBuilder.filter(filterPattern);
         }
-        filterBuilder.findJDKInternals(findJDKInternals);
-        filterBuilder.findMissingDeps(findMissingDeps);
+
+        filterBuilder.findJDKInternals(findJDKInternals != null ? findJDKInternals : false);
+
+        filterBuilder.findMissingDeps(findMissingDeps != null ? findMissingDeps : false);
 
         if (includePattern != null) {
-            filterBuilder.includePattern(Pattern.compile(includePattern));
+            filterBuilder.includePattern(includePattern);
         }
 
         if (requires != null) {

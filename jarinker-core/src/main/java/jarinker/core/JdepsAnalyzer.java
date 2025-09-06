@@ -22,7 +22,7 @@ import lombok.Builder;
 @Builder
 public class JdepsAnalyzer {
 
-    private JdepsFilter filter;
+    private JdepsFilter jdepsFilter;
 
     /**
      * Analyze dependencies using jdeps.
@@ -110,7 +110,7 @@ public class JdepsAnalyzer {
             var writer = JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), Analyzer.Type.CLASS);
 
             // Create and run analyzer
-            var depsAnalyzer = new DepsAnalyzer(config, filter, writer, Analyzer.Type.CLASS, false);
+            var depsAnalyzer = new DepsAnalyzer(config, jdepsFilter, writer, Analyzer.Type.CLASS, false);
 
             boolean success = depsAnalyzer.run();
             if (!success) {

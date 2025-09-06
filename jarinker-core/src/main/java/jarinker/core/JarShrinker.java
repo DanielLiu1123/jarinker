@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Shrinks JAR files by removing unused classes.
@@ -33,7 +34,7 @@ public class JarShrinker {
      * @return shrink result
      * @throws IOException if shrinking fails
      */
-    public ShrinkResult shrink(List<Path> jarPaths, Map<String, Set<String>> reachableClasses, Path outputDir)
+    public ShrinkResult shrink(List<Path> jarPaths, Map<String, Set<String>> reachableClasses, @Nullable Path outputDir)
             throws IOException {
 
         long originalSize = 0;
@@ -66,6 +67,9 @@ public class JarShrinker {
                 }
                 outputPath = parent.resolve(jarPath.getFileName() + ".tmp");
             } else {
+                if (outputDir == null) {
+                    throw new IllegalArgumentException("Output directory must be specified if inPlace is false");
+                }
                 if (!Files.exists(outputDir)) {
                     Files.createDirectories(outputDir);
                 }
