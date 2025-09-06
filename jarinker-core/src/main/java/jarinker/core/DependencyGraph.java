@@ -21,11 +21,14 @@ public class DependencyGraph {
 
     private final Graph<DepsAnalyzer.Node> graph;
     /**
-     * jar, path
+     * jar, path. All processed archives, including root archives.
      */
     private final Set<Archive> archives;
-
+    /**
+     * source archives.
+     */
     private final List<Archive> rootArchives;
+
     private final AnalyzerType analysisType;
     private final Map<String, Set<String>> dependenciesMap;
 
