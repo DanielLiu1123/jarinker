@@ -5,7 +5,6 @@ import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.JdepsConfiguration;
 import com.sun.tools.jdeps.JdepsFilter;
 import com.sun.tools.jdeps.JdepsWriter;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -32,24 +31,46 @@ public class JdepsAnalyzer {
      * @param classpath classpath for analysis
      * @return dependency graph
      */
-    @SneakyThrows
     public DependencyGraph analyze(List<Path> sources, List<Path> classpath) {
-        return performAnalysis(sources, classpath, Runtime.version());
+        return doAnalysis(sources, classpath, Runtime.version());
     }
 
     @SneakyThrows
-    private DependencyGraph performAnalysis(
+    private DependencyGraph doAnalysis(List<Path> sources, List<Path> classpath, Runtime.Version multiReleaseVersion) {
+        try (var jdepsConfiguration = buildJdepsConfiguration(sources, classpath, multiReleaseVersion)) {
+
+            var type = Analyzer.Type.CLASS;
+
+            var jdepsWriter = buildJdepsWriter(type);
+
+            var depsAnalyzer = new DepsAnalyzer(jdepsConfiguration, jdepsFilter, jdepsWriter, type, false);
+
+            var ok = depsAnalyzer.run(false, Integer.MAX_VALUE);
+            if (!ok) {
+                throw new RuntimeException("Jdeps analysis failed");
+            }
+
+            return new DependencyGraph(depsAnalyzer.dependenceGraph());
+        }
+    }
+
+    private static JdepsWriter buildJdepsWriter(Analyzer.Type type) {
+        return JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), type);
+    }
+
+    @SneakyThrows
+    private static JdepsConfiguration buildJdepsConfiguration(
             List<Path> sources, List<Path> classpath, Runtime.Version multiReleaseVersion) {
-        // Build jdeps configuration
-        var configBuilder = new JdepsConfiguration.Builder();
-        configBuilder.multiRelease(multiReleaseVersion);
+        var builder = new JdepsConfiguration.Builder();
+
+        builder.multiRelease(multiReleaseVersion);
 
         // Add sources
         for (Path source : sources) {
             if (!source.toFile().exists()) {
-                throw new IOException("Source path does not exist: " + source);
+                throw new IllegalArgumentException("Source path does not exist: " + source);
             }
-            configBuilder.addRoot(source);
+            builder.addRoot(source);
         }
 
         // Add classpath
@@ -63,31 +84,13 @@ public class JdepsAnalyzer {
                     stream.filter(Files::isRegularFile)
                             .map(e -> e.toAbsolutePath().toString())
                             .filter(p -> p.endsWith(".jar"))
-                            .forEach(configBuilder::addClassPath);
+                            .forEach(builder::addClassPath);
                 }
             } else {
-                configBuilder.addClassPath(cp.toAbsolutePath().toString());
+                builder.addClassPath(cp.toAbsolutePath().toString());
             }
         }
 
-        var config = configBuilder.build();
-
-        // Create a null writer since we only need the graph
-        var writer = JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), Analyzer.Type.CLASS);
-
-        // Create and run analyzer
-        var depsAnalyzer = new DepsAnalyzer(config, jdepsFilter, writer, Analyzer.Type.CLASS, false);
-
-        boolean success = depsAnalyzer.run();
-        if (!success) {
-            throw new IOException("jdeps analysis failed - no dependencies found or analysis error");
-        }
-
-        var graph = depsAnalyzer.dependenceGraph();
-        if (graph == null || graph.nodes().isEmpty()) {
-            throw new IOException("jdeps analysis produced empty dependency graph");
-        }
-
-        return new DependencyGraph(graph);
+        return builder.build();
     }
 }

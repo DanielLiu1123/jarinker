@@ -44,13 +44,13 @@ public class AnalyzeCommand implements Callable<Integer> {
 
     @Option(
             names = {"--filter-same-package"},
-            defaultValue = "true",
+            defaultValue = "false",
             description = "Filter dependencies within the same package")
     private Boolean filterSamePackage;
 
     @Option(
             names = {"--filter-same-archive"},
-            defaultValue = "true",
+            defaultValue = "false",
             description = "Filter dependencies within the same archive")
     private Boolean filterSameArchive;
 
