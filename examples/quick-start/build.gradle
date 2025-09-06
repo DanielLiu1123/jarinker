@@ -64,8 +64,7 @@ tasks.register("downloadAllDependencies") {
 
 dependencies {
     implementation files(guavaJar).builtBy(tasks.named("downloadGuava"))
-    // test if it works with shrunk jar
-//    implementation files("shrunk-libs/guava-${guavaVersion}-jre-shrunk.jar")
+//    implementation files("shrunk-libs/guava-${guavaVersion}-jre.jar")  // test if it works with shrunk jar
     implementation files(failureAccessJar).builtBy(tasks.named("downloadFailureAccess"))
     implementation files(listenableFutureJar).builtBy(tasks.named("downloadListenableFuture"))
     implementation files(jspecifyJar).builtBy(tasks.named("downloadJspecify"))

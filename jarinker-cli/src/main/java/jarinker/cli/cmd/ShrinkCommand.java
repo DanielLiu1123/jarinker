@@ -113,14 +113,14 @@ public class ShrinkCommand implements Runnable {
 
         var shrinker = JarShrinker.builder().outputDir(outputDir).build();
 
-        var result = shrinker.shrink(getDependentJars(graph), graph);
+        var result = shrinker.shrink(getDepJars(graph), graph);
 
         // Print results
         printShrinkResult(result);
     }
 
     @SneakyThrows
-    private static List<Archive> getDependentJars(DependencyGraph graph) {
+    private static List<Archive> getDepJars(DependencyGraph graph) {
         var classpath = new HashSet<>(graph.getArchives());
         for (var archive : graph.getRootArchives()) {
             classpath.remove(archive);
@@ -130,11 +130,7 @@ public class ShrinkCommand implements Runnable {
 
     private void printShrinkResult(JarShrinker.ShrinkResult result) {
         System.out.println("=== Shrink Results ===");
-        System.out.println("Processed JARs: " + result.processedJars());
-        System.out.println("Original size: " + formatBytes(result.originalSize()));
-        System.out.println("Shrunk size: " + formatBytes(result.shrunkSize()));
-        System.out.println("Size reduction: " + String.format("%.1f%%", result.getReductionPercentage()));
-        System.out.println("Saved bytes: " + formatBytes(result.getSavedBytes()));
+        for (var jar : result.jars()) {}
     }
 
     private String formatBytes(long bytes) {

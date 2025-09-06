@@ -7,7 +7,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
@@ -35,11 +34,6 @@ public class JarShrinker {
      */
     @SneakyThrows
     public ShrinkResult shrink(List<Archive> depsArchives, DependencyGraph graph) {
-
-        Set<String> allReachableClasses = graph.getDependenciesMap().values().stream()
-                .flatMap(Set::stream)
-                .collect(Collectors.toSet());
-
         var shrinkItem = new ArrayList<ShrinkResult.Item>();
 
         for (var archive : depsArchives) {
@@ -70,7 +64,7 @@ public class JarShrinker {
             }
 
             // Shrink the JAR
-            shrinkJar(path, outputPath, allReachableClasses);
+            shrinkJar(path, outputPath, graph);
 
             // If in-place, replace the original file
             if (outputDir == null) {
@@ -87,7 +81,12 @@ public class JarShrinker {
     }
 
     @SneakyThrows
-    private static void shrinkJar(Path inputJar, Path outputJar, Set<String> reachableClasses) {
+    private static void shrinkJar(Path inputJar, Path outputJar, DependencyGraph graph) {
+
+        var reachableClasses = graph.getDependenciesMap().keySet().stream()
+                .map(s -> s.substring(s.indexOf('/') + 1))
+                .collect(Collectors.toSet());
+
         try (var inputStream = Files.newInputStream(inputJar);
                 var jarInput = new JarInputStream(inputStream);
                 var outputStream = Files.newOutputStream(outputJar);
@@ -96,12 +95,12 @@ public class JarShrinker {
             // Copy manifest if present
             var manifest = jarInput.getManifest();
             if (manifest != null) {
-                jarOutput.putNextEntry(new java.util.jar.JarEntry("META-INF/MANIFEST.MF"));
+                jarOutput.putNextEntry(new JarEntry("META-INF/MANIFEST.MF"));
                 manifest.write(jarOutput);
                 jarOutput.closeEntry();
             }
 
-            java.util.jar.JarEntry entry;
+            JarEntry entry;
             while ((entry = jarInput.getNextJarEntry()) != null) {
                 String entryName = entry.getName();
 
@@ -119,13 +118,7 @@ public class JarShrinker {
                 // For class files, check if they are reachable
                 if (entryName.endsWith(".class")) {
                     String className = entryName.replace('/', '.').replaceAll("\\.class$", "");
-
-                    // Keep the class if it's in the reachable set or if we have no reachability info
-                    if (reachableClasses.isEmpty()
-                            || reachableClasses.contains(className)
-                            || reachableClasses.stream()
-                                    .anyMatch(reachable ->
-                                            className.startsWith(reachable) || reachable.startsWith(className))) {
+                    if (reachableClasses.contains(className)) {
                         copyEntry(jarInput, jarOutput, entry);
                     }
                 } else {
@@ -157,7 +150,7 @@ public class JarShrinker {
      */
     public record ShrinkResult(List<Item> jars) {
 
-        record Item(Path before, Path after, long beforeSize, long afterSize) {
+        public record Item(Path before, Path after, long beforeSize, long afterSize) {
 
             public double getReductionPercentage() {
                 if (beforeSize == 0) return 0.0;
