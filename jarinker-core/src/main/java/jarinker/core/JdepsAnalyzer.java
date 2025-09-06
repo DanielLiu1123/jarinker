@@ -8,6 +8,7 @@ import com.sun.tools.jdeps.JdepsWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -94,8 +95,14 @@ public class JdepsAnalyzer {
 
             // Add classpath
             for (Path cp : classpath) {
-                if (cp.toFile().exists()) {
-                    configBuilder.addClassPath(cp.toString());
+                cp = cp.toAbsolutePath().toString().endsWith("/*") ? cp.getParent() : cp;
+                if (cp != null && Files.exists(cp) && Files.isDirectory(cp)) {
+                    try (var stream = Files.walk(cp)) {
+                        stream.filter(Files::isRegularFile)
+                                .filter(p -> p.getFileName().toString().endsWith(".jar"))
+                                .map(p -> p.toAbsolutePath().toString())
+                                .forEach(configBuilder::addClassPath);
+                    }
                 }
             }
 
