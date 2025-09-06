@@ -76,15 +76,13 @@ public class AnalyzeCommand implements Runnable {
 
     @Option(
             names = {"--requires"},
-            defaultValue = "[]",
             description = "Find dependencies matching the given module name (can be specified multiple times)")
-    private List<String> requires;
+    private @Nullable List<String> requires;
 
     @Option(
             names = {"--target-packages"},
-            defaultValue = "[]",
             description = "Find dependencies matching the given package name (can be specified multiple times)")
-    private List<String> targetPackages;
+    private @Nullable List<String> targetPackages;
 
     @Option(
             names = {"--type"},

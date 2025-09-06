@@ -1,7 +1,7 @@
 package jarinker.cli.cmd;
 
-import picocli.CommandLine;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Model.CommandSpec;
 import picocli.CommandLine.Spec;
 
 /**
@@ -17,7 +17,7 @@ import picocli.CommandLine.Spec;
 public class RootCommand implements Runnable {
 
     @Spec
-    CommandLine.Model.CommandSpec spec;
+    CommandSpec spec;
 
     @Override
     public void run() {
