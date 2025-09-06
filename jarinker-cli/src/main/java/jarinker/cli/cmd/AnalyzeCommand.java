@@ -125,7 +125,12 @@ public class AnalyzeCommand implements Runnable {
             filterBuilder.regex(regex);
         }
 
-        filterBuilder.filter(filterSamePackage, filterSameArchive);
+        // For package analysis, we want to see dependencies between packages in the same archive
+        // For class analysis, we might want to filter same package dependencies
+        boolean shouldFilterSamePackage = filterSamePackage != null ? filterSamePackage : (type == AnalyzerType.CLASS);
+        boolean shouldFilterSameArchive = filterSameArchive != null ? filterSameArchive : false;
+
+        filterBuilder.filter(shouldFilterSamePackage, shouldFilterSameArchive);
 
         if (filterPattern != null) {
             filterBuilder.filter(filterPattern);

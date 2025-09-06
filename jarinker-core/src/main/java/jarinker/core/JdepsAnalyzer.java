@@ -3,9 +3,6 @@ package jarinker.core;
 import com.sun.tools.jdeps.DepsAnalyzer;
 import com.sun.tools.jdeps.JdepsConfiguration;
 import com.sun.tools.jdeps.JdepsFilter;
-import com.sun.tools.jdeps.JdepsWriter;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -36,8 +33,7 @@ public class JdepsAnalyzer {
 
     @SneakyThrows
     private DependencyGraph doAnalysis() {
-        var depsAnalyzer = new DepsAnalyzer(
-                jdepsConfiguration, jdepsFilter, buildJdepsWriter(), type.toJdepsAnalysisType(), false);
+        var depsAnalyzer = new DepsAnalyzer(jdepsConfiguration, jdepsFilter, null, type.toJdepsAnalysisType(), false);
 
         var ok = depsAnalyzer.run(false, Integer.MAX_VALUE);
         if (!ok) {
@@ -45,10 +41,6 @@ public class JdepsAnalyzer {
         }
 
         return new DependencyGraph(depsAnalyzer.dependenceGraph(), type);
-    }
-
-    private JdepsWriter buildJdepsWriter() {
-        return JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), type.toJdepsAnalysisType());
     }
 
     @SneakyThrows

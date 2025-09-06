@@ -7,8 +7,13 @@ import com.google.common.collect.Lists;
 public class QuickStart {
 
     public static void main(String[] args) {
-        System.out.println(Strings.class);
-        System.out.println(Lists.class);
+        // Actually use Strings methods to create real dependencies
+        String result = Strings.nullToEmpty(null);
+        System.out.println("Strings result: " + result);
+
+        // Actually use Lists methods to create real dependencies
+        var list = Lists.newArrayList("a", "b", "c");
+        System.out.println("Lists result: " + list);
 
         // Use StringUtils from different package
         System.out.println(StringUtils.split("1,2,3", ","));
