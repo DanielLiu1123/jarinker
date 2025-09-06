@@ -29,6 +29,8 @@ public class AnalyzeCommand implements Runnable {
             required = true)
     private List<Path> classpath;
 
+    // === jdeps options ===
+
     // Filter options
     @Option(
             names = {"--filter-pattern"},
@@ -79,6 +81,8 @@ public class AnalyzeCommand implements Runnable {
             names = {"--target-packages"},
             description = "Find dependencies matching the given package name (can be specified multiple times)")
     private List<String> targetPackages;
+
+    // === jdeps options end ===
 
     @Override
     public void run() {

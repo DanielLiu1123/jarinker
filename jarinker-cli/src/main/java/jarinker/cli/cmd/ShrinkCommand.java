@@ -37,6 +37,8 @@ public class ShrinkCommand implements Runnable {
             description = "Output directory for shrunk artifacts")
     private @Nullable Path outputDir;
 
+    // === jdeps options ===
+
     // Filter options
     @Option(
             names = {"--filter-pattern"},
@@ -89,6 +91,8 @@ public class ShrinkCommand implements Runnable {
             defaultValue = "[]",
             description = "Find dependencies matching the given package name (can be specified multiple times)")
     private List<String> targetPackages;
+
+    // === shrink options end ===
 
     @Override
     public void run() {
