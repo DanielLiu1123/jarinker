@@ -23,43 +23,36 @@ import lombok.SneakyThrows;
 public class JdepsAnalyzer {
 
     private JdepsFilter jdepsFilter;
+    private JdepsConfiguration jdepsConfiguration;
+    private Analyzer.Type type;
 
     /**
      * Analyze dependencies using jdeps.
      *
-     * @param sources   source paths to analyze
-     * @param classpath classpath for analysis
      * @return dependency graph
      */
-    public DependencyGraph analyze(List<Path> sources, List<Path> classpath) {
-        return doAnalysis(sources, classpath, Runtime.version());
+    public DependencyGraph analyze() {
+        return doAnalysis();
     }
 
     @SneakyThrows
-    private DependencyGraph doAnalysis(List<Path> sources, List<Path> classpath, Runtime.Version multiReleaseVersion) {
-        try (var jdepsConfiguration = buildJdepsConfiguration(sources, classpath, multiReleaseVersion)) {
+    private DependencyGraph doAnalysis() {
+        var depsAnalyzer = new DepsAnalyzer(jdepsConfiguration, jdepsFilter, buildJdepsWriter(), type, false);
 
-            var type = Analyzer.Type.CLASS;
-
-            var jdepsWriter = buildJdepsWriter(type);
-
-            var depsAnalyzer = new DepsAnalyzer(jdepsConfiguration, jdepsFilter, jdepsWriter, type, false);
-
-            var ok = depsAnalyzer.run(false, Integer.MAX_VALUE);
-            if (!ok) {
-                throw new RuntimeException("Jdeps analysis failed");
-            }
-
-            return new DependencyGraph(depsAnalyzer.dependenceGraph());
+        var ok = depsAnalyzer.run(false, Integer.MAX_VALUE);
+        if (!ok) {
+            throw new RuntimeException("Jdeps analysis failed");
         }
+
+        return new DependencyGraph(depsAnalyzer.dependenceGraph());
     }
 
-    private static JdepsWriter buildJdepsWriter(Analyzer.Type type) {
+    private JdepsWriter buildJdepsWriter() {
         return JdepsWriter.newSimpleWriter(new PrintWriter(new StringWriter()), type);
     }
 
     @SneakyThrows
-    private static JdepsConfiguration buildJdepsConfiguration(
+    public static JdepsConfiguration buildJdepsConfiguration(
             List<Path> sources, List<Path> classpath, Runtime.Version multiReleaseVersion) {
         var builder = new JdepsConfiguration.Builder();
 

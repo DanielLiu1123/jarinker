@@ -1,8 +1,10 @@
 package jarinker.cli.cmd;
 
+import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JdepsAnalyzer;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -74,22 +76,40 @@ public class AnalyzeCommand implements Runnable {
 
     @Option(
             names = {"--requires"},
+            defaultValue = "[]",
             description = "Find dependencies matching the given module name (can be specified multiple times)")
     private List<String> requires;
 
     @Option(
             names = {"--target-packages"},
+            defaultValue = "[]",
             description = "Find dependencies matching the given package name (can be specified multiple times)")
     private List<String> targetPackages;
+
+    @Option(
+            names = {"--type"},
+            description = "Analysis type (class, package, module...), see com.sun.tools.jdeps.Analyzer.Type",
+            defaultValue = "class")
+    private Analyzer.Type type;
 
     // === jdeps options end ===
 
     @Override
     public void run() {
-        var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
-        // Perform analysis
-        var graph = analyzer.analyze(sources, classpath);
+        DependencyGraph graph;
+
+        try (var jdepsConfiguration = JdepsAnalyzer.buildJdepsConfiguration(sources, classpath, Runtime.version())) {
+            var analyzer = JdepsAnalyzer.builder()
+                    .jdepsFilter(buildJdepsFilter())
+                    .jdepsConfiguration(jdepsConfiguration)
+                    .type(type)
+                    .build();
+
+            graph = analyzer.analyze();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
         // Print results
         printReport(graph);

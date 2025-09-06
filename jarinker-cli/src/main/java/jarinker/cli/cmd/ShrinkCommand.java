@@ -1,5 +1,6 @@
 package jarinker.cli.cmd;
 
+import com.sun.tools.jdeps.Analyzer;
 import com.sun.tools.jdeps.JdepsFilter;
 import jarinker.core.DependencyGraph;
 import jarinker.core.JarShrinker;
@@ -52,13 +53,13 @@ public class ShrinkCommand implements Runnable {
 
     @Option(
             names = {"--filter-same-package"},
-            defaultValue = "true",
+            defaultValue = "false",
             description = "Filter dependencies within the same package")
     private Boolean filterSamePackage;
 
     @Option(
             names = {"--filter-same-archive"},
-            defaultValue = "true",
+            defaultValue = "false",
             description = "Filter dependencies within the same archive")
     private Boolean filterSameArchive;
 
@@ -96,9 +97,19 @@ public class ShrinkCommand implements Runnable {
 
     @Override
     public void run() {
-        var analyzer = JdepsAnalyzer.builder().jdepsFilter(buildJdepsFilter()).build();
 
-        var graph = analyzer.analyze(sources, classpath);
+        DependencyGraph graph;
+        try (var jdepsConfiguration = JdepsAnalyzer.buildJdepsConfiguration(sources, classpath, Runtime.version())) {
+            var analyzer = JdepsAnalyzer.builder()
+                    .jdepsFilter(buildJdepsFilter())
+                    .jdepsConfiguration(jdepsConfiguration)
+                    .type(Analyzer.Type.CLASS)
+                    .build();
+
+            graph = analyzer.analyze();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
 
         // Step 2: Extract reachable classes from dependency graph
         Map<String, Set<String>> reachableClasses = extractReachableClasses(graph);
