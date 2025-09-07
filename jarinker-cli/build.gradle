@@ -47,6 +47,9 @@ graalvmNative {
             mainClass = "jarinker.cli.Cli"
             verbose = true
             sharedLibrary = false
+
+            buildArgs.addAll(args)
+            buildArgs.add("--add-opens=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED")
         }
     }
 }
