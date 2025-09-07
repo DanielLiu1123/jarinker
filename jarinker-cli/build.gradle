@@ -4,9 +4,10 @@ plugins {
 }
 
 dependencies {
-
     implementation(project(":jarinker-core"))
     implementation("info.picocli:picocli:${picocliVersion}")
+    implementation("org.jspecify:jspecify:${jspecifyVersion}")
+
     annotationProcessor("info.picocli:picocli-codegen:${picocliVersion}")
 
     // https://github.com/GoodforGod/graalvm-hint

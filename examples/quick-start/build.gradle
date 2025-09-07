@@ -53,22 +53,40 @@ tasks.register("downloadJ2objc", Exec) {
     outputs.file j2objcJar
 }
 
-if (java.nio.file.Path.of("${projectDir}/shrunk-libs").toFile().exists()) {
-    dependencies {
+dependencies {
+    if (file("shrunk-libs/guava-${guavaVersion}-jre.jar").exists()) {
         implementation files("shrunk-libs/guava-${guavaVersion}-jre.jar")
-        implementation files("shrunk-libs/failureaccess-${failureAccessVersion}.jar")
-        implementation files("shrunk-libs/listenablefuture-${listenableFutureVersion}.jar")
-        implementation files("shrunk-libs/jspecify-${jspecifyVersion}.jar")
-        implementation files("shrunk-libs/error_prone_annotations-${errorProneVersion}.jar")
-        implementation files("shrunk-libs/j2objc-annotations-${j2objcVersion}.jar")
-    }
-} else {
-    dependencies {
+    } else {
         implementation files(guavaJar).builtBy(tasks.named("downloadGuava"))
+    }
+
+    if (file("shrunk-libs/failureaccess-${failureAccessVersion}.jar").exists()) {
+        implementation files("shrunk-libs/failureaccess-${failureAccessVersion}.jar")
+    } else {
         implementation files(failureAccessJar).builtBy(tasks.named("downloadFailureAccess"))
+    }
+
+    if (file("shrunk-libs/listenablefuture-${listenableFutureVersion}.jar").exists()) {
+        implementation files("shrunk-libs/listenablefuture-${listenableFutureVersion}.jar")
+    } else {
         implementation files(listenableFutureJar).builtBy(tasks.named("downloadListenableFuture"))
+    }
+
+    if (file("shrunk-libs/jspecify-${jspecifyVersion}.jar").exists()) {
+        implementation files("shrunk-libs/jspecify-${jspecifyVersion}.jar")
+    } else {
         implementation files(jspecifyJar).builtBy(tasks.named("downloadJspecify"))
+    }
+
+    if (file("shrunk-libs/error_prone_annotations-${errorProneVersion}.jar").exists()) {
+        implementation files("shrunk-libs/error_prone_annotations-${errorProneVersion}.jar")
+    } else {
         implementation files(errorProneJar).builtBy(tasks.named("downloadErrorProne"))
+    }
+
+    if (file("shrunk-libs/j2objc-annotations-${j2objcVersion}.jar").exists()) {
+        implementation files("shrunk-libs/j2objc-annotations-${j2objcVersion}.jar")
+    } else {
         implementation files(j2objcJar).builtBy(tasks.named("downloadJ2objc"))
     }
 }
