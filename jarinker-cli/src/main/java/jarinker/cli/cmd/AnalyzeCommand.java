@@ -88,7 +88,7 @@ public class AnalyzeCommand implements Runnable {
     @Option(
             names = {"--type"},
             description = "Analysis type (class, package, module), see jarinker.core.AnalyzerType",
-            defaultValue = "class")
+            defaultValue = "package")
     private AnalyzerType type;
 
     // === jdeps options end ===
