@@ -1,3 +1,7 @@
+plugins {
+    id "application"
+}
+
 def guavaVersion = "33.4.8"
 def failureAccessVersion = "1.0.3"
 def listenableFutureVersion = "9999.0-empty-to-avoid-conflict-with-guava"
@@ -13,62 +17,62 @@ def jspecifyJar = file("libs/jspecify-${jspecifyVersion}.jar")
 def errorProneJar = file("libs/error_prone_annotations-${errorProneVersion}.jar")
 def j2objcJar = file("libs/j2objc-annotations-${j2objcVersion}.jar")
 
-// Download Guava main jar
 tasks.register("downloadGuava", Exec) {
     commandLine "curl", "--create-dirs", "-o", guavaJar.absolutePath,
-        "https://repo1.maven.org/maven2/com/google/guava/guava/${guavaVersion}-jre/guava-${guavaVersion}-jre.jar"
+            "https://repo1.maven.org/maven2/com/google/guava/guava/${guavaVersion}-jre/guava-${guavaVersion}-jre.jar"
     outputs.file guavaJar
 }
 
-// Download failureaccess
 tasks.register("downloadFailureAccess", Exec) {
     commandLine "curl", "--create-dirs", "-o", failureAccessJar.absolutePath,
-        "https://repo1.maven.org/maven2/com/google/guava/failureaccess/${failureAccessVersion}/failureaccess-${failureAccessVersion}.jar"
+            "https://repo1.maven.org/maven2/com/google/guava/failureaccess/${failureAccessVersion}/failureaccess-${failureAccessVersion}.jar"
     outputs.file failureAccessJar
 }
 
-// Download listenablefuture
 tasks.register("downloadListenableFuture", Exec) {
     commandLine "curl", "--create-dirs", "-o", listenableFutureJar.absolutePath,
-        "https://repo1.maven.org/maven2/com/google/guava/listenablefuture/${listenableFutureVersion}/listenablefuture-${listenableFutureVersion}.jar"
+            "https://repo1.maven.org/maven2/com/google/guava/listenablefuture/${listenableFutureVersion}/listenablefuture-${listenableFutureVersion}.jar"
     outputs.file listenableFutureJar
 }
 
-// Download jspecify
 tasks.register("downloadJspecify", Exec) {
     commandLine "curl", "--create-dirs", "-o", jspecifyJar.absolutePath,
-        "https://repo1.maven.org/maven2/org/jspecify/jspecify/${jspecifyVersion}/jspecify-${jspecifyVersion}.jar"
+            "https://repo1.maven.org/maven2/org/jspecify/jspecify/${jspecifyVersion}/jspecify-${jspecifyVersion}.jar"
     outputs.file jspecifyJar
 }
 
-// Download error_prone_annotations
 tasks.register("downloadErrorProne", Exec) {
     commandLine "curl", "--create-dirs", "-o", errorProneJar.absolutePath,
-        "https://repo1.maven.org/maven2/com/google/errorprone/error_prone_annotations/${errorProneVersion}/error_prone_annotations-${errorProneVersion}.jar"
+            "https://repo1.maven.org/maven2/com/google/errorprone/error_prone_annotations/${errorProneVersion}/error_prone_annotations-${errorProneVersion}.jar"
     outputs.file errorProneJar
 }
 
-// Download j2objc-annotations
 tasks.register("downloadJ2objc", Exec) {
     commandLine "curl", "--create-dirs", "-o", j2objcJar.absolutePath,
-        "https://repo1.maven.org/maven2/com/google/j2objc/j2objc-annotations/${j2objcVersion}/j2objc-annotations-${j2objcVersion}.jar"
+            "https://repo1.maven.org/maven2/com/google/j2objc/j2objc-annotations/${j2objcVersion}/j2objc-annotations-${j2objcVersion}.jar"
     outputs.file j2objcJar
 }
 
-// Task to download all dependencies
-tasks.register("downloadAllDependencies") {
-    dependsOn "downloadGuava", "downloadFailureAccess", "downloadListenableFuture",
-              "downloadJspecify", "downloadErrorProne", "downloadJ2objc"
-    description = "Download all Guava runtime dependencies"
+if (java.nio.file.Path.of("${projectDir}/shrunk-libs").toFile().exists()) {
+    dependencies {
+        implementation files("shrunk-libs/guava-${guavaVersion}-jre.jar")
+        implementation files("shrunk-libs/failureaccess-${failureAccessVersion}.jar")
+        implementation files("shrunk-libs/listenablefuture-${listenableFutureVersion}.jar")
+        implementation files("shrunk-libs/jspecify-${jspecifyVersion}.jar")
+        implementation files("shrunk-libs/error_prone_annotations-${errorProneVersion}.jar")
+        implementation files("shrunk-libs/j2objc-annotations-${j2objcVersion}.jar")
+    }
+} else {
+    dependencies {
+        implementation files(guavaJar).builtBy(tasks.named("downloadGuava"))
+        implementation files(failureAccessJar).builtBy(tasks.named("downloadFailureAccess"))
+        implementation files(listenableFutureJar).builtBy(tasks.named("downloadListenableFuture"))
+        implementation files(jspecifyJar).builtBy(tasks.named("downloadJspecify"))
+        implementation files(errorProneJar).builtBy(tasks.named("downloadErrorProne"))
+        implementation files(j2objcJar).builtBy(tasks.named("downloadJ2objc"))
+    }
 }
 
-dependencies {
-    implementation files(guavaJar).builtBy(tasks.named("downloadGuava"))
-//    implementation files("shrunk-libs/guava-${guavaVersion}-jre.jar")  // test if it works with shrunk jar
-    implementation files(failureAccessJar).builtBy(tasks.named("downloadFailureAccess"))
-    implementation files(listenableFutureJar).builtBy(tasks.named("downloadListenableFuture"))
-    implementation files(jspecifyJar).builtBy(tasks.named("downloadJspecify"))
-    implementation files(errorProneJar).builtBy(tasks.named("downloadErrorProne"))
-    implementation files(j2objcJar).builtBy(tasks.named("downloadJ2objc"))
+application {
+    mainClass = "com.example.QuickStart"
 }
-
