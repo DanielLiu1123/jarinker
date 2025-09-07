@@ -52,30 +52,6 @@ public class ShrinkCommand implements Runnable {
             description = "Find dependencies matching the given pattern")
     private @Nullable Pattern regex;
 
-    @Option(
-            names = {"--filter-same-package"},
-            defaultValue = "false",
-            description = "Filter dependencies within the same package")
-    private Boolean filterSamePackage;
-
-    @Option(
-            names = {"--filter-same-archive"},
-            defaultValue = "false",
-            description = "Filter dependencies within the same archive")
-    private Boolean filterSameArchive;
-
-    @Option(
-            names = {"--find-jdk-internals"},
-            defaultValue = "false",
-            description = "Find class-level dependencies on JDK internal APIs")
-    private Boolean findJDKInternals;
-
-    @Option(
-            names = {"--find-missing-deps"},
-            defaultValue = "false",
-            description = "Find missing dependencies")
-    private Boolean findMissingDeps;
-
     // Source filters
     @Option(
             names = {"--include-pattern"},
@@ -94,6 +70,14 @@ public class ShrinkCommand implements Runnable {
 
     // === shrink options end ===
 
+    @Option(
+            names = {"--shrink-jar-pattern"},
+            defaultValue = ".*",
+            split = ",",
+            description =
+                    "Shrink JAR files matching the given pattern, shrink all jars by default. Supports comma-separated multiple patterns.")
+    private List<Pattern> shrinkJarPattern;
+
     @Override
     @SneakyThrows
     public void run() {
@@ -111,7 +95,10 @@ public class ShrinkCommand implements Runnable {
             graph = analyzer.analyze();
         }
 
-        var shrinker = JarShrinker.builder().outputDir(outputDir).build();
+        var shrinker = JarShrinker.builder()
+                .outputDir(outputDir)
+                .shrinkJarPattern(shrinkJarPattern)
+                .build();
 
         var result = shrinker.shrink(getDepJars(graph), graph);
 
@@ -209,15 +196,15 @@ public class ShrinkCommand implements Runnable {
             filterBuilder.regex(regex);
         }
 
-        filterBuilder.filter(filterSamePackage, filterSameArchive);
+        filterBuilder.filter(false, false);
 
         if (filterPattern != null) {
             filterBuilder.filter(filterPattern);
         }
 
-        filterBuilder.findJDKInternals(findJDKInternals);
+        filterBuilder.findJDKInternals(false);
 
-        filterBuilder.findMissingDeps(findMissingDeps);
+        filterBuilder.findMissingDeps(false);
 
         if (includePattern != null) {
             filterBuilder.includePattern(includePattern);

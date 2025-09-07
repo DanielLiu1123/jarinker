@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.SneakyThrows;
@@ -25,6 +26,7 @@ import org.jspecify.annotations.Nullable;
 public class JarShrinker {
 
     private @Nullable Path outputDir;
+    private List<Pattern> shrinkJarPattern;
 
     /**
      * Shrink JAR files based on reachable classes.
@@ -38,11 +40,13 @@ public class JarShrinker {
 
         for (var archive : depsArchives) {
             var path = archive.path().orElse(null);
-            if (path == null) {
-                continue;
-            }
-
-            if (!Files.isRegularFile(path) || !path.toString().endsWith(".jar")) {
+            if (path == null
+                    || path.getFileName() == null
+                    || !Files.isRegularFile(path)
+                    || !path.toString().endsWith(".jar")
+                    || shrinkJarPattern.stream()
+                            .noneMatch(p ->
+                                    p.matcher(path.getFileName().toString()).matches())) {
                 continue;
             }
 
