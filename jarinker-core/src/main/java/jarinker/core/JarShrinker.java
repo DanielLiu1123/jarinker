@@ -96,37 +96,16 @@ public class JarShrinker {
                 var outputStream = Files.newOutputStream(outputJar);
                 var jarOutput = new JarOutputStream(outputStream)) {
 
-            // Copy manifest if present
-            var manifest = jarInput.getManifest();
-            if (manifest != null) {
-                jarOutput.putNextEntry(new JarEntry("META-INF/MANIFEST.MF"));
-                manifest.write(jarOutput);
-                jarOutput.closeEntry();
-            }
-
             JarEntry entry;
             while ((entry = jarInput.getNextJarEntry()) != null) {
                 String entryName = entry.getName();
 
-                // Skip directories and manifest (already handled)
-                if (entry.isDirectory() || entryName.equals("META-INF/MANIFEST.MF")) {
-                    continue;
-                }
-
-                // Skip signature files
-                if (entryName.startsWith("META-INF/")
-                        && (entryName.endsWith(".SF") || entryName.endsWith(".DSA") || entryName.endsWith(".RSA"))) {
-                    continue;
-                }
-
-                // For class files, check if they are reachable
-                if (entryName.endsWith(".class")) {
+                if (entryName.endsWith(".class") && !entryName.endsWith("module-info.class")) {
                     String className = entryName.replace('/', '.').replaceAll("\\.class$", "");
                     if (reachableClasses.contains(className)) {
                         copyEntry(jarInput, jarOutput, entry);
                     }
                 } else {
-                    // Keep all non-class files (resources, etc.)
                     copyEntry(jarInput, jarOutput, entry);
                 }
             }
