@@ -1,0 +1,108 @@
+package jarinker.core;
+
+import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_DECLARED;
+import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_DECLARED_METHODS;
+import static io.goodforgod.graalvm.hint.annotation.ReflectionHint.AccessType.ALL_PUBLIC;
+
+import com.sun.tools.jdeps.Archive;
+import com.sun.tools.jdeps.DepsAnalyzer;
+import com.sun.tools.jdeps.JdepsConfiguration;
+import com.sun.tools.jdeps.JdepsFilter;
+import io.goodforgod.graalvm.hint.annotation.ReflectionHint;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Set;
+import lombok.Builder;
+import lombok.SneakyThrows;
+
+/**
+ * Wrapper around jdeps DepsAnalyzer for dependency analysis.
+ * Directly uses jdeps internal API and data models.
+ *
+ * @author Freeman
+ */
+@Builder
+@ReflectionHint(
+        types = {JdepsConfiguration.Builder.class},
+        value = {ALL_DECLARED, ALL_PUBLIC, ALL_DECLARED_METHODS})
+public class JdepsAnalyzer {
+
+    private JdepsFilter jdepsFilter;
+    private JdepsConfiguration jdepsConfiguration;
+    private AnalyzerType type;
+
+    /**
+     * Analyze dependencies using jdeps.
+     *
+     * @return dependency graph
+     */
+    public DependencyGraph analyze() {
+        return doAnalysis();
+    }
+
+    @SneakyThrows
+    private DependencyGraph doAnalysis() {
+        var depsAnalyzer = new DepsAnalyzer(jdepsConfiguration, jdepsFilter, null, type.toJdepsAnalysisType(), false);
+
+        var ok = depsAnalyzer.run(false, Integer.MAX_VALUE);
+        if (!ok) {
+            throw new RuntimeException("Jdeps analysis failed");
+        }
+
+        return new DependencyGraph(
+                depsAnalyzer.dependenceGraph(), getArchives(depsAnalyzer), getRootArchives(depsAnalyzer), type);
+    }
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    private static List<Archive> getRootArchives(DepsAnalyzer depsAnalyzer) {
+        var field = DepsAnalyzer.class.getDeclaredField("rootArchives");
+        field.setAccessible(true);
+        return (List<Archive>) field.get(depsAnalyzer);
+    }
+
+    @SneakyThrows
+    @SuppressWarnings("unchecked")
+    private static Set<Archive> getArchives(DepsAnalyzer depsAnalyzer) {
+        var method = DepsAnalyzer.class.getDeclaredMethod("archives");
+        method.setAccessible(true);
+        return (Set<Archive>) method.invoke(depsAnalyzer);
+    }
+
+    @SneakyThrows
+    public static JdepsConfiguration buildJdepsConfiguration(
+            List<Path> sources, List<Path> classpath, Runtime.Version multiReleaseVersion) {
+        var builder = new JdepsConfiguration.Builder();
+
+        builder.multiRelease(multiReleaseVersion);
+
+        // Add sources
+        for (Path source : sources) {
+            if (!source.toFile().exists()) {
+                throw new IllegalArgumentException("Source path does not exist: " + source);
+            }
+            builder.addRoot(source);
+        }
+
+        // Add classpath
+        for (Path cp : classpath) {
+            cp = cp.toAbsolutePath().toString().endsWith("/*") ? cp.getParent() : cp;
+            if (cp == null || !Files.exists(cp)) {
+                continue;
+            }
+            if (Files.isDirectory(cp)) {
+                try (var stream = Files.walk(cp)) {
+                    stream.filter(Files::isRegularFile)
+                            .map(e -> e.toAbsolutePath().toString())
+                            .filter(p -> p.endsWith(".jar"))
+                            .forEach(builder::addClassPath);
+                }
+            } else {
+                builder.addClassPath(cp.toAbsolutePath().toString());
+            }
+        }
+
+        return builder.build();
+    }
+}

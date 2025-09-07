@@ -10,19 +10,32 @@ dependencies {
     annotationProcessor("info.picocli:picocli-codegen:${picocliVersion}")
 
     // https://github.com/GoodforGod/graalvm-hint
-    annotationProcessor("io.goodforgod:graalvm-hint-processor:${graalvmHintProcessor}")
     compileOnly("io.goodforgod:graalvm-hint-annotations:${graalvmHintProcessor}")
+    annotationProcessor("io.goodforgod:graalvm-hint-processor:${graalvmHintProcessor}")
 
     testImplementation("com.fasterxml.jackson.core:jackson-databind:${jacksonVersion}")
 }
 
-compileJava {
-    options.compilerArgs += ["-Aproject=${project.group}/${project.name}"]
+def args = [
+        "--add-modules=jdk.jdeps",
+        "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
+]
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs += args
+    options.compilerArgs += "-Aproject=${project.group}/${project.name}"
+}
+
+// make IDEA works
+tasks.withType(JavaExec).configureEach {
+    jvmArgs += args
+    jvmArgs += "--add-opens=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
 }
 
 application {
     mainClass = "jarinker.cli.Cli"
     applicationName = "jarinker"
+    applicationDefaultJvmArgs = args + "--add-opens=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED"
 }
 
 // https://graalvm.github.io/native-build-tools/latest/gradle-plugin.html#configuration-options

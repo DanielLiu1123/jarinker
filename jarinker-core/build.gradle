@@ -1,9 +1,16 @@
+dependencies {
+    // https://github.com/GoodforGod/graalvm-hint
+    compileOnly("io.goodforgod:graalvm-hint-annotations:${graalvmHintProcessor}")
+    annotationProcessor("io.goodforgod:graalvm-hint-processor:${graalvmHintProcessor}")
+}
+
 // Add compiler arguments to access jdeps module
 tasks.withType(JavaCompile).configureEach {
-    options.compilerArgs.addAll([
-            "--add-modules", "jdk.jdeps",
-            "--add-exports", "jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
-    ])
+    options.compilerArgs += [
+            "--add-modules=jdk.jdeps",
+            "--add-exports=jdk.jdeps/com.sun.tools.jdeps=ALL-UNNAMED",
+            "-Aproject=${project.group}/${project.name}"
+    ]
 }
 
 test {
