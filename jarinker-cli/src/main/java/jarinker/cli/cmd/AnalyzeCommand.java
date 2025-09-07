@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
 import picocli.CommandLine.Command;
@@ -45,30 +46,6 @@ public class AnalyzeCommand implements Runnable {
             description = "Find dependencies matching the given pattern")
     private @Nullable Pattern regex;
 
-    @Option(
-            names = {"--filter-same-package"},
-            defaultValue = "false",
-            description = "Filter dependencies within the same package")
-    private Boolean filterSamePackage;
-
-    @Option(
-            names = {"--filter-same-archive"},
-            defaultValue = "false",
-            description = "Filter dependencies within the same archive")
-    private Boolean filterSameArchive;
-
-    @Option(
-            names = {"--find-jdk-internals"},
-            defaultValue = "false",
-            description = "Find class-level dependencies on JDK internal APIs")
-    private Boolean findJDKInternals;
-
-    @Option(
-            names = {"--find-missing-deps"},
-            defaultValue = "false",
-            description = "Find missing dependencies")
-    private Boolean findMissingDeps;
-
     // Source filters
     @Option(
             names = {"--include-pattern"},
@@ -92,6 +69,12 @@ public class AnalyzeCommand implements Runnable {
     private AnalyzerType type;
 
     // === jdeps options end ===
+
+    @Option(
+            names = {"--show-jdk-deps"},
+            defaultValue = "false",
+            description = "Show JDK dependencies, by default they are filtered out")
+    private Boolean showJdkDeps;
 
     @Override
     @SneakyThrows
@@ -125,15 +108,15 @@ public class AnalyzeCommand implements Runnable {
             filterBuilder.regex(regex);
         }
 
-        filterBuilder.filter(filterSamePackage, filterSameArchive);
+        filterBuilder.filter(false, false);
 
         if (filterPattern != null) {
             filterBuilder.filter(filterPattern);
         }
 
-        filterBuilder.findJDKInternals(findJDKInternals);
+        filterBuilder.findJDKInternals(false);
 
-        filterBuilder.findMissingDeps(findMissingDeps);
+        filterBuilder.findMissingDeps(false);
 
         if (includePattern != null) {
             filterBuilder.includePattern(includePattern);
@@ -192,14 +175,15 @@ public class AnalyzeCommand implements Runnable {
         // Calculate statistics
         int totalNodes = graph.getNodeCount();
         int usedNodes = 0;
+        var showJdkDeps = this.showJdkDeps;
 
         for (var entry : dependenciesMap.entrySet()) {
-            Set<String> nonJdkDeps = entry.getValue().stream()
-                    .filter(dep -> !isJdkDependency(dep))
+            Set<String> deps = entry.getValue().stream()
+                    .filter(dep -> showJdkDeps || !isJdkDependency(dep))
                     .filter(dep -> !isSameScopeAsSelf(entry.getKey(), dep))
-                    .collect(java.util.stream.Collectors.toSet());
+                    .collect(Collectors.toSet());
 
-            if (!nonJdkDeps.isEmpty()) {
+            if (!deps.isEmpty()) {
                 usedNodes++;
             }
         }
@@ -225,15 +209,17 @@ public class AnalyzeCommand implements Runnable {
         System.out.println("🔗 Dependencies:");
         System.out.println();
 
+        var showJdkDeps = this.showJdkDeps;
+
         dependenciesMap.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
             String source = entry.getKey();
             Set<String> dependencies = entry.getValue();
 
             // Filter out JDK dependencies and same package/module dependencies
             Set<String> filteredDependencies = dependencies.stream()
-                    .filter(dep -> !isJdkDependency(dep))
+                    .filter(dep -> showJdkDeps || !isJdkDependency(dep))
                     .filter(dep -> !isSameScopeAsSelf(source, dep))
-                    .collect(java.util.stream.Collectors.toSet());
+                    .collect(Collectors.toSet());
 
             if (!filteredDependencies.isEmpty()) {
                 System.out.println("📦 " + source);
