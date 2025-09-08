@@ -35,12 +35,13 @@ public class AnalyzeCommand implements Runnable {
 
     // === jdeps options ===
 
-    // Filter options
     @Option(
-            names = {"--filter-pattern"},
-            description = "Filter dependencies matching the given pattern")
-    private @Nullable Pattern filterPattern;
+            names = {"--type"},
+            description = "Analysis type (class, package, module), see jarinker.core.AnalyzerType",
+            defaultValue = "package")
+    private AnalyzerType type;
 
+    // Filter options
     @Option(
             names = {"--regex"},
             description = "Find dependencies matching the given pattern")
@@ -51,22 +52,6 @@ public class AnalyzeCommand implements Runnable {
             names = {"--include-pattern"},
             description = "Restrict analysis to classes matching pattern")
     private @Nullable Pattern includePattern;
-
-    @Option(
-            names = {"--requires"},
-            description = "Find dependencies matching the given module name (can be specified multiple times)")
-    private @Nullable List<String> requires;
-
-    @Option(
-            names = {"--target-packages"},
-            description = "Find dependencies matching the given package name (can be specified multiple times)")
-    private @Nullable List<String> targetPackages;
-
-    @Option(
-            names = {"--type"},
-            description = "Analysis type (class, package, module), see jarinker.core.AnalyzerType",
-            defaultValue = "package")
-    private AnalyzerType type;
 
     // === jdeps options end ===
 
@@ -110,23 +95,12 @@ public class AnalyzeCommand implements Runnable {
 
         filterBuilder.filter(false, false);
 
-        if (filterPattern != null) {
-            filterBuilder.filter(filterPattern);
-        }
-
         filterBuilder.findJDKInternals(false);
 
         filterBuilder.findMissingDeps(false);
 
         if (includePattern != null) {
             filterBuilder.includePattern(includePattern);
-        }
-
-        if (requires != null) {
-            Set<String> pkgs = targetPackages != null ? Set.copyOf(targetPackages) : Set.of();
-            for (String require : requires) {
-                filterBuilder.requires(require, pkgs);
-            }
         }
 
         return filterBuilder.build();
