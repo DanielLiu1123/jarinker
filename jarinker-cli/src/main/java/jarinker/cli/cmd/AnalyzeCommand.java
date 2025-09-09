@@ -180,27 +180,54 @@ public class AnalyzeCommand implements Runnable {
             return;
         }
 
-        System.out.println("🔗 Dependencies:");
+        System.out.println("🌳 Dependencies:");
         System.out.println();
 
-        var showJdkDeps = this.showJdkDeps;
+        printDependencyTree(dependenciesMap, graph.getAnalysisType());
+    }
 
-        dependenciesMap.entrySet().stream().sorted(Map.Entry.comparingByKey()).forEach(entry -> {
-            String source = entry.getKey();
-            Set<String> dependencies = entry.getValue();
+    private void printDependencyTree(Map<String, Set<String>> dependenciesMap, AnalyzerType analysisType) {
+        dependenciesMap.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> printNodeDependencies(entry.getKey(), entry.getValue(), analysisType));
+    }
 
-            // Filter out JDK dependencies and same package/module dependencies
-            Set<String> filteredDependencies = dependencies.stream()
-                    .filter(dep -> showJdkDeps || !isJdkDependency(dep))
-                    .filter(dep -> !isSameScopeAsSelf(source, dep))
-                    .collect(Collectors.toSet());
+    private void printNodeDependencies(String source, Set<String> dependencies, AnalyzerType analysisType) {
+        Set<String> filteredDependencies = filterDependencies(source, dependencies);
 
-            if (!filteredDependencies.isEmpty()) {
-                System.out.println("📦 " + source);
-                filteredDependencies.stream().sorted().forEach(dep -> System.out.println("   └─ " + dep));
-                System.out.println();
-            }
-        });
+        if (!filteredDependencies.isEmpty()) {
+            System.out.println("📦 " + source);
+            printDependencyList(filteredDependencies);
+            System.out.println();
+        }
+    }
+
+    private Set<String> filterDependencies(String source, Set<String> dependencies) {
+        return dependencies.stream()
+                .filter(dep -> showJdkDeps || !isJdkDependency(dep))
+                .filter(dep -> !isSameScopeAsSelf(source, dep))
+                .collect(Collectors.toSet());
+    }
+
+    private void printDependencyList(Set<String> dependencies) {
+        List<String> sortedDeps = dependencies.stream().sorted().toList();
+
+        for (int i = 0; i < sortedDeps.size(); i++) {
+            String dep = sortedDeps.get(i);
+            boolean isLast = (i == sortedDeps.size() - 1);
+            String prefix = isLast ? "   └─ " : "   ├─ ";
+            String displayDep = formatDependencyName(dep);
+            System.out.println(prefix + displayDep);
+        }
+    }
+
+    private String formatDependencyName(String fullName) {
+        // For all analysis types, show only the name part (after the last "/")
+        // This removes jar prefixes like "guava-33.4.8-jre.jar/" or "not found/"
+        if (fullName.contains("/")) {
+            return fullName.substring(fullName.lastIndexOf("/") + 1);
+        }
+        return fullName;
     }
 
     private boolean isSameScopeAsSelf(String source, String dependency) {
