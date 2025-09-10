@@ -4,6 +4,8 @@ set -e
 
 # Keep the version in the CLI in sync with the version in the gradle.properties file
 VERSION=$(grep '^version=' gradle.properties | cut -d'=' -f2)
+# Remove -SNAPSHOT suffix for CLI version
+VERSION=$(echo "$VERSION" | sed 's/-SNAPSHOT$//')
 perl -pi -e "s/version = \".*\"/version = \"$VERSION\"/" jarinker-cli/src/main/java/jarinker/cli/cmd/RootCommand.java
 
 ./gradlew spotlessApply
