@@ -233,11 +233,11 @@ public class AnalyzeCommand implements Runnable {
     private boolean isSameScopeAsSelf(String source, String dependency) {
         return switch (type) {
             case PACKAGE -> // For package analysis, filter dependencies within the same package
-                extractPackageName(source).equals(extractPackageName(dependency));
+            extractPackageName(source).equals(extractPackageName(dependency));
             case MODULE -> // For module analysis, filter dependencies within the same module
-                extractModuleName(source).equals(extractModuleName(dependency));
+            extractModuleName(source).equals(extractModuleName(dependency));
             case CLASS -> // For class analysis, don't filter same scope dependencies
-                false;
+            false;
         };
     }
 
