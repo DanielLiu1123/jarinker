@@ -9,7 +9,6 @@ import jarinker.core.JdepsAnalyzer;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import lombok.SneakyThrows;
 import org.jspecify.annotations.Nullable;
@@ -39,50 +38,20 @@ public class ShrinkCommand implements Runnable {
             description = "Output directory for shrunk artifacts")
     private @Nullable Path outputDir;
 
-    // === jdeps options ===
-
-    // Filter options
-    @Option(
-            names = {"--filter-pattern"},
-            description = "Filter dependencies matching the given pattern")
-    private @Nullable Pattern filterPattern;
-
-    @Option(
-            names = {"--regex"},
-            description = "Find dependencies matching the given pattern")
-    private @Nullable Pattern regex;
-
-    // Source filters
-    @Option(
-            names = {"--include-pattern"},
-            description = "Restrict analysis to classes matching pattern")
-    private @Nullable Pattern includePattern;
-
-    @Option(
-            names = {"--requires"},
-            description = "Find dependencies matching the given module name (can be specified multiple times)")
-    private @Nullable List<String> requires;
-
-    @Option(
-            names = {"--target-packages"},
-            description = "Find dependencies matching the given package name (can be specified multiple times)")
-    private @Nullable List<String> targetPackages;
-
     // === shrink options end ===
 
     @Option(
-            names = {"--shrink-jar-pattern"},
+            names = {"--jar"},
             defaultValue = ".*",
             split = ",",
             description =
                     "Shrink JAR files matching the given pattern, shrink all jars by default. Supports comma-separated multiple patterns.")
-    private List<Pattern> shrinkJarPattern;
+    private List<Pattern> jarPatterns;
 
     @Override
     @SneakyThrows
     public void run() {
 
-        // Step 1: Analyze dependencies
         DependencyGraph graph;
 
         try (var jdepsConfiguration = JdepsAnalyzer.buildJdepsConfiguration(sources, classpath, Runtime.version())) {
@@ -97,12 +66,11 @@ public class ShrinkCommand implements Runnable {
 
         var shrinker = JarShrinker.builder()
                 .outputDir(outputDir)
-                .shrinkJarPattern(shrinkJarPattern)
+                .jarPatterns(jarPatterns)
                 .build();
 
         var result = shrinker.shrink(getDepJars(graph), graph);
 
-        // Print results
         printShrinkResult(result);
     }
 
@@ -192,30 +160,9 @@ public class ShrinkCommand implements Runnable {
     private JdepsFilter buildJdepsFilter() {
         var filterBuilder = new JdepsFilter.Builder();
 
-        if (regex != null) {
-            filterBuilder.regex(regex);
-        }
-
         filterBuilder.filter(false, false);
-
-        if (filterPattern != null) {
-            filterBuilder.filter(filterPattern);
-        }
-
         filterBuilder.findJDKInternals(false);
-
         filterBuilder.findMissingDeps(false);
-
-        if (includePattern != null) {
-            filterBuilder.includePattern(includePattern);
-        }
-
-        if (requires != null) {
-            Set<String> pkgs = targetPackages != null ? Set.copyOf(targetPackages) : Set.of();
-            for (String require : requires) {
-                filterBuilder.requires(require, pkgs);
-            }
-        }
 
         return filterBuilder.build();
     }

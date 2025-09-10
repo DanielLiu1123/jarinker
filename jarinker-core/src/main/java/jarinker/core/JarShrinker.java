@@ -26,7 +26,7 @@ import org.jspecify.annotations.Nullable;
 public class JarShrinker {
 
     private @Nullable Path outputDir;
-    private List<Pattern> shrinkJarPattern;
+    private List<Pattern> jarPatterns;
 
     /**
      * Shrink JAR files based on reachable classes.
@@ -44,7 +44,7 @@ public class JarShrinker {
                     || path.getFileName() == null
                     || !Files.isRegularFile(path)
                     || !path.toString().endsWith(".jar")
-                    || shrinkJarPattern.stream()
+                    || jarPatterns.stream()
                             .noneMatch(p ->
                                     p.matcher(path.getFileName().toString()).matches())) {
                 continue;
