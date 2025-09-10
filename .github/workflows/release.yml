@@ -77,6 +77,6 @@ jobs:
           name: "${{ github.ref_name }}"
           tag_name: "${{ github.ref_name }}"
           generate_release_notes: true
-          draft: false
+          draft: true
           prerelease: false
           files: artifacts/*
