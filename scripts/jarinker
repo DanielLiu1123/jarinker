@@ -7,7 +7,6 @@
 set -euo pipefail
 
 # Global configuration
-readonly SCRIPT_NAME="jarinker"
 readonly GITHUB_REPO="DanielLiu1123/jarinker"
 readonly REQUIRED_JAVA_VERSION=17
 readonly DEFAULT_CACHE_DIR="$HOME/.jarinker"
@@ -40,59 +39,6 @@ log_error() {
 
 log_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
-}
-
-# Show help information
-show_help() {
-    cat << 'EOF'
-Jarinker Remote Execution Script
-
-USAGE:
-    # Install to PATH (recommended)
-    curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash
-
-    # Then use directly
-    jarinker analyze -cp libs/ build/classes/java/main
-
-    # Or execute directly with arguments
-    curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- analyze -cp libs/ build/
-
-    # Or download and use
-    curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker -o jarinker && chmod +x jarinker
-    ./jarinker analyze -cp libs/ build/
-
-ENVIRONMENT VARIABLES:
-    JARINKER_VERSION     Specify jarinker version (default: latest)
-    JARINKER_CACHE_DIR   Cache directory (default: ~/.jarinker)
-    JARINKER_OFFLINE     Use offline mode, only use cached versions (default: false)
-    JARINKER_VERBOSE     Enable verbose output (default: false)
-
-SCRIPT OPTIONS:
-    --script-help        Show this help message
-    --script-version     Show script version
-    --script-clean       Clean cache directory
-    --script-update      Force update to latest version
-    --script-install     Install jarinker to PATH
-
-EXAMPLES:
-    # Install to PATH
-    curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash
-
-    # Use after installation
-    jarinker analyze -cp libs/ build/classes/java/main
-    jarinker shrink -cp libs/ -o shrunk-libs/ build/classes/java/main
-
-    # Direct execution
-    ./jarinker analyze -cp libs/ build/classes/java/main
-
-    # Use specific version
-    JARINKER_VERSION=0.1.0-RC1 ./jarinker analyze -cp libs/ build/
-
-    # Verbose mode
-    JARINKER_VERBOSE=true ./jarinker --help
-
-For jarinker-specific help, run: jarinker --help (after installation)
-EOF
 }
 
 # Check if required dependencies are available
@@ -192,17 +138,6 @@ execute_jarinker() {
     exec "$jarinker_bin" "$@"
 }
 
-# Clean cache directory
-clean_cache() {
-    if [[ -d "$JARINKER_CACHE_DIR" ]]; then
-        log_info "Cleaning cache directory: $JARINKER_CACHE_DIR"
-        rm -rf "$JARINKER_CACHE_DIR"
-        log_success "Cache cleaned"
-    else
-        log_info "Cache directory does not exist: $JARINKER_CACHE_DIR"
-    fi
-}
-
 # Main function
 main() {
     # Check dependencies first
@@ -219,7 +154,4 @@ main() {
     execute_jarinker "$jarinker_bin" "$@"
 }
 
-# Run main function if script is executed directly
-if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    main "$@"
-fi
+main "$@"
