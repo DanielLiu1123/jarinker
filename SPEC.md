@@ -30,10 +30,7 @@ jarinker analyze [-hV] [--show-jdk-deps]
 jarinker analyze -cp "libs/*" build/classes/java/main
 
 # Class-level analysis with JDK dependencies
-jarinker analyze --type class --show-jdk-deps -cp "libs/*" build/classes/java/main
-
-# Filter analysis to specific patterns
-jarinker analyze --include-pattern "com.example.*" -cp "libs/*" build/classes/java/main
+jarinker analyze --type class --show-jdk-deps -cp "libs/" build/classes/java/main
 ```
 
 ---
@@ -63,13 +60,13 @@ jarinker shrink [-hV] [-o=<outputDir>] -cp=<classpath>
 
 ```bash
 # Shrink to output directory
-jarinker shrink -cp "libs/*" -o shrunk-libs/ build/classes/java/main
+jarinker shrink -cp "libs/" -o shrunk-libs/ build/classes/java/main
 
 # In-place shrinking
-jarinker shrink -cp "libs/*" build/classes/java/main
+jarinker shrink -cp "libs/" build/classes/java/main
 
 # Shrink specific JAR patterns
-jarinker shrink --jar-pattern "guava-*.jar" --jar-pattern "commons-*.jar" -cp "libs/*" -o shrunk-libs/ build/classes/java/main
+jarinker shrink --jar "guava-.*\.jar,commons-lang3-.*\.jar" -cp "libs/" -o shrunk-libs/ build/classes/java/main
 ```
 
 ---
