@@ -1,8 +1,7 @@
 #!/bin/bash
 
 # Jarinker Remote Execution Script
-# This script automatically downloads and executes jarinker without requiring manual installation
-# Usage: curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- [jarinker-args]
+# Usage: curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- [jarinker-args]
 
 set -euo pipefail
 
