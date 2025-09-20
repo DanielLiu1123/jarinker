@@ -25,7 +25,7 @@ public class Cli {
     public static void main(String[] args) {
         var root = new CommandLine(new RootCommand());
 
-        root.addSubcommand("completion", new AutoComplete.GenerateCompletion());
+        root.addSubcommand(new AutoComplete.GenerateCompletion());
         root.addSubcommand("analyze", new AnalyzeCommand());
         root.addSubcommand("shrink", new ShrinkCommand());
 
