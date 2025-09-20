@@ -5,7 +5,7 @@ A JAR shrinker that analyzes dependencies and removes unused classes.
 ## Quick Start
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- --help
+curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- --help
 ```
 
 ## Commands
