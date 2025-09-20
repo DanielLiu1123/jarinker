@@ -14,7 +14,7 @@ readonly DEFAULT_CACHE_DIR="$HOME/.jarinker"
 
 # User configurable variables
 JARINKER_CACHE_DIR="${JARINKER_CACHE_DIR:-$DEFAULT_CACHE_DIR}"
-JARINKER_VERSION="${JARINKER_VERSION:-v0.1.0-RC1}"
+JARINKER_VERSION="${JARINKER_VERSION:-v0.0.1}"
 JARINKER_OFFLINE="${JARINKER_OFFLINE:-false}"
 JARINKER_VERBOSE="${JARINKER_VERBOSE:-false}"
 
@@ -97,7 +97,7 @@ EOF
 
 # Check if required dependencies are available
 check_dependencies() {
-    log_info "Checking dependencies..."
+    log_info "Checking Java version..."
     
     # Check Java
     if ! command -v java &> /dev/null; then
@@ -114,44 +114,6 @@ check_dependencies() {
     fi
     
     log_success "Java $java_version found"
-    
-    # Check required tools
-    local missing_tools=()
-    for tool in curl unzip; do
-        if ! command -v "$tool" &> /dev/null; then
-            missing_tools+=("$tool")
-        fi
-    done
-    
-    if [[ ${#missing_tools[@]} -gt 0 ]]; then
-        log_error "Missing required tools: ${missing_tools[*]}"
-        log_error "Please install the missing tools and try again."
-        exit 1
-    fi
-}
-
-# Get the latest version from GitHub API
-get_latest_version() {
-    log_info "Fetching latest version from GitHub..."
-    
-    local api_url="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
-    local response
-
-    if ! response=$(curl -s --fail "$api_url" 2>/dev/null); then
-        log_error "Failed to fetch latest version from GitHub API"
-        log_error "$response"
-        exit 1
-    fi
-    
-    local version
-    version=$(echo "$response" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/' | head -n1)
-    
-    if [[ -z "$version" ]]; then
-        log_error "Failed to parse version from GitHub API response"
-        exit 1
-    fi
-    
-    echo "$version"
 }
 
 # Download and extract jarinker
@@ -161,13 +123,12 @@ download_jarinker() {
     local cache_dir="$JARINKER_CACHE_DIR/versions/$version"
     local zip_file="$cache_dir/jarinker-cli-$version.zip"
 
-    local download_cmd="curl -L \"$download_url\" -o \"$zip_file\""
-    log_info "Downloading jarinker $version: $download_cmd"
+    log_info "Downloading jarinker $version..."
     
     # Create cache directory
     mkdir -p "$cache_dir"
 
-    eval "$download_cmd"
+    curl -L "$download_url" -o "$zip_file"
 
     if [[ ! -f "$zip_file" ]]; then
         log_error "Download failed: $zip_file not found"
@@ -187,17 +148,15 @@ download_jarinker() {
     
     # Find the jarinker executable
     local jarinker_bin
-    jarinker_bin=$(find "$cache_dir" -name "jarinker" -type f -executable | head -n1)
+    jarinker_bin=$(find "$cache_dir" -name "jarinker" -type f | head -n1)
     
     if [[ -z "$jarinker_bin" ]]; then
         log_error "jarinker executable not found in extracted files"
         exit 1
     fi
     
-    # Make sure it's executable
-    chmod +x "$jarinker_bin"
-    
-    log_success "jarinker $version downloaded and extracted"
+    log_success "jarinker $version extracted to $cache_dir"
+
     echo "$jarinker_bin"
 }
 
@@ -218,7 +177,7 @@ ensure_jarinker_available() {
     
     # Download jarinker
     local download_url
-    download_url="https://github.com/$GITHUB_REPO/releases/download/untagged-9ed8f7f7efe17269a084/jarinker-cli-$version.zip"
+    download_url="https://github.com/$GITHUB_REPO/releases/download/$version/jarinker-cli-$version.zip"
     download_jarinker "$version" "$download_url"
 }
 
@@ -244,112 +203,6 @@ clean_cache() {
     fi
 }
 
-# Parse script-specific arguments
-parse_script_args() {
-    while [[ $# -gt 0 ]]; do
-        case $1 in
-            --script-help)
-                show_help
-                exit 0
-                ;;
-            --script-version)
-                echo "jarinker remote execution script v1.0.0"
-                exit 0
-                ;;
-            --script-clean)
-                clean_cache
-                exit 0
-                ;;
-            *)
-                # Not a script argument, pass through to jarinker
-                break
-                ;;
-        esac
-        shift
-    done
-
-    # Return remaining arguments
-    echo "$@"
-}
-
-# Install jarinker to PATH
-install_to_path() {
-    local install_dir="$HOME/.local/bin"
-    local script_path="$install_dir/jarinker"
-
-    log_info "Installing jarinker to PATH..."
-
-    # Create install directory if it doesn't exist
-    if [[ ! -d "$install_dir" ]]; then
-        log_info "Creating directory: $install_dir"
-        if ! mkdir -p "$install_dir"; then
-            log_error "Failed to create directory: $install_dir"
-            log_error "Please check permissions or run with appropriate privileges"
-            exit 1
-        fi
-    fi
-
-    # Create the PATH script
-    cat > "$script_path" << 'EOF'
-#!/bin/bash
-# Jarinker PATH wrapper script
-# This script calls the cached jarinker installation
-
-JARINKER_CACHE_DIR="${JARINKER_CACHE_DIR:-$HOME/.jarinker}"
-
-# Find the latest cached jarinker
-find_jarinker() {
-    local cache_dir="$JARINKER_CACHE_DIR"
-    if [[ ! -d "$cache_dir" ]]; then
-        echo "Error: jarinker not found. Please run the installation script first:" >&2
-        echo "curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash" >&2
-        exit 1
-    fi
-
-    # Look for jarinker executable in cache
-    local jarinker_bin
-    jarinker_bin=$(find "$cache_dir" -name "jarinker" -type f 2>/dev/null | head -n1)
-
-    if [[ -z "$jarinker_bin" ]]; then
-        echo "Error: jarinker executable not found in cache. Please run:" >&2
-        echo "curl -sSL https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash" >&2
-        exit 1
-    fi
-
-    echo "$jarinker_bin"
-}
-
-# Execute jarinker
-jarinker_bin=$(find_jarinker)
-exec "$jarinker_bin" "$@"
-EOF
-
-    # Make it executable
-    if ! chmod +x "$script_path"; then
-        log_error "Failed to make script executable: $script_path"
-        exit 1
-    fi
-
-    log_success "jarinker installed to: $script_path"
-
-    # Check if install directory is in PATH
-    if [[ ":$PATH:" != *":$install_dir:"* ]]; then
-        log_warn "Installation directory is not in your PATH: $install_dir"
-        log_warn "Add the following line to your shell profile (~/.bashrc, ~/.zshrc, etc.):"
-        echo ""
-        echo "    export PATH=\"$install_dir:\$PATH\""
-        echo ""
-        log_warn "Or run jarinker with full path: $script_path"
-    else
-        log_success "Installation directory is in your PATH"
-        echo ""
-        echo "You can now use jarinker directly:"
-        echo "  jarinker --help"
-        echo "  jarinker analyze -cp libs/ build/classes/java/main"
-        echo "  jarinker shrink -cp libs/ -o shrunk-libs/ build/classes/java/main"
-    fi
-}
-
 # Main function
 main() {
     # Check dependencies first
@@ -362,19 +215,8 @@ main() {
     local jarinker_bin
     jarinker_bin=$(ensure_jarinker_available "$version")
 
-    # If no arguments provided, install to PATH after downloading
-    if [[ $# -eq 0 ]]; then
-        log_info "No arguments provided. Installing jarinker to PATH..."
-        install_to_path
-        exit 0
-    fi
-
-    # Parse script-specific arguments
-    local remaining_args
-    remaining_args=$(parse_script_args "$@")
-
     # Execute jarinker with remaining arguments
-    execute_jarinker "$jarinker_bin" $remaining_args
+    execute_jarinker "$jarinker_bin" "$@"
 }
 
 # Run main function if script is executed directly
