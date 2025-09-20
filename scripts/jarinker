@@ -14,7 +14,7 @@ readonly DEFAULT_CACHE_DIR="$HOME/.jarinker"
 
 # User configurable variables
 JARINKER_CACHE_DIR="${JARINKER_CACHE_DIR:-$DEFAULT_CACHE_DIR}"
-JARINKER_VERSION="${JARINKER_VERSION:-latest}"
+JARINKER_VERSION="${JARINKER_VERSION:-v0.1.0-RC1}"
 JARINKER_OFFLINE="${JARINKER_OFFLINE:-false}"
 JARINKER_VERBOSE="${JARINKER_VERBOSE:-false}"
 
@@ -27,9 +27,7 @@ readonly NC='\033[0m' # No Color
 
 # Logging functions
 log_info() {
-    if [[ "$JARINKER_VERBOSE" == "true" ]]; then
-        echo -e "${BLUE}[INFO]${NC} $1" >&2
-    fi
+    echo -e "${BLUE}[INFO]${NC} $1" >&2
 }
 
 log_warn() {
@@ -41,9 +39,7 @@ log_error() {
 }
 
 log_success() {
-    if [[ "$JARINKER_VERBOSE" == "true" ]]; then
-        echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
-    fi
+    echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
 }
 
 # Show help information
@@ -106,7 +102,6 @@ check_dependencies() {
     # Check Java
     if ! command -v java &> /dev/null; then
         log_error "Java not found. Please install Java $REQUIRED_JAVA_VERSION or later."
-        log_error "Visit: https://adoptium.net/ to download OpenJDK"
         exit 1
     fi
     
@@ -115,7 +110,6 @@ check_dependencies() {
     java_version=$(java -version 2>&1 | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
     if [[ "$java_version" -lt "$REQUIRED_JAVA_VERSION" ]]; then
         log_error "Java $REQUIRED_JAVA_VERSION or later is required. Found Java $java_version."
-        log_error "Please upgrade your Java installation."
         exit 1
     fi
     
@@ -134,8 +128,6 @@ check_dependencies() {
         log_error "Please install the missing tools and try again."
         exit 1
     fi
-    
-    log_success "All dependencies satisfied"
 }
 
 # Get the latest version from GitHub API
@@ -144,10 +136,10 @@ get_latest_version() {
     
     local api_url="https://api.github.com/repos/$GITHUB_REPO/releases/latest"
     local response
-    
+
     if ! response=$(curl -s --fail "$api_url" 2>/dev/null); then
         log_error "Failed to fetch latest version from GitHub API"
-        log_error "Please check your internet connection or try specifying a version with JARINKER_VERSION"
+        log_error "$response"
         exit 1
     fi
     
@@ -162,54 +154,27 @@ get_latest_version() {
     echo "$version"
 }
 
-# Get download URL for a specific version
-get_download_url() {
-    local version="$1"
-    log_info "Getting download URL for version $version..."
-    
-    local api_url="https://api.github.com/repos/$GITHUB_REPO/releases/tags/$version"
-    local response
-    
-    if ! response=$(curl -s --fail "$api_url" 2>/dev/null); then
-        log_error "Failed to fetch release information for version $version"
-        exit 1
-    fi
-    
-    local download_url
-    download_url=$(echo "$response" | grep '"browser_download_url":.*jarinker-cli.*\.zip"' | sed -E 's/.*"([^"]+)".*/\1/' | head -n1)
-    
-    if [[ -z "$download_url" ]]; then
-        log_error "No suitable download found for version $version"
-        log_error "Please check if the version exists or try a different version"
-        exit 1
-    fi
-    
-    echo "$download_url"
-}
-
 # Download and extract jarinker
 download_jarinker() {
     local version="$1"
     local download_url="$2"
     local cache_dir="$JARINKER_CACHE_DIR/versions/$version"
     local zip_file="$cache_dir/jarinker-cli-$version.zip"
-    
-    log_info "Downloading jarinker $version..."
+
+    local download_cmd="curl -L \"$download_url\" -o \"$zip_file\""
+    log_info "Downloading jarinker $version: $download_cmd"
     
     # Create cache directory
     mkdir -p "$cache_dir"
-    
-    # Download with progress bar if possible
-    if curl --help 2>/dev/null | grep -q '\--progress-bar'; then
-        curl --progress-bar -L "$download_url" -o "$zip_file"
-    else
-        curl -L "$download_url" -o "$zip_file"
-    fi
-    
+
+    eval "$download_cmd"
+
     if [[ ! -f "$zip_file" ]]; then
         log_error "Download failed: $zip_file not found"
         exit 1
     fi
+
+    log_success "Downloaded jarinker $version to $zip_file"
     
     log_info "Extracting jarinker..."
     
@@ -251,16 +216,9 @@ ensure_jarinker_available() {
         return
     fi
     
-    # Check offline mode
-    if [[ "$JARINKER_OFFLINE" == "true" ]]; then
-        log_error "jarinker $version not found in cache and offline mode is enabled"
-        log_error "Cache directory: $cache_dir"
-        exit 1
-    fi
-    
     # Download jarinker
     local download_url
-    download_url=$(get_download_url "$version")
+    download_url="https://github.com/$GITHUB_REPO/releases/download/untagged-9ed8f7f7efe17269a084/jarinker-cli-$version.zip"
     download_jarinker "$version" "$download_url"
 }
 
@@ -301,19 +259,6 @@ parse_script_args() {
             --script-clean)
                 clean_cache
                 exit 0
-                ;;
-            --script-update)
-                JARINKER_VERSION="latest"
-                # Force re-download by removing cache
-                if [[ "$JARINKER_VERSION" == "latest" ]]; then
-                    # Only try to get latest version if not in offline mode
-                    if [[ "$JARINKER_OFFLINE" != "true" ]]; then
-                        local latest_version
-                        latest_version=$(get_latest_version)
-                        rm -rf "$JARINKER_CACHE_DIR/versions/$latest_version"
-                    fi
-                fi
-                shift
                 ;;
             *)
                 # Not a script argument, pass through to jarinker
@@ -407,69 +352,28 @@ EOF
 
 # Main function
 main() {
-    # Handle script-only arguments that don't need jarinker
-    case "${1:-}" in
-        --script-help)
-            show_help
-            exit 0
-            ;;
-        --script-version)
-            echo "jarinker remote execution script v1.0.0"
-            exit 0
-            ;;
-        --script-clean)
-            clean_cache
-            exit 0
-            ;;
-        --script-install)
-            # First ensure jarinker is downloaded and cached
-            check_dependencies
-            local version="$JARINKER_VERSION"
-            if [[ "$version" == "latest" ]]; then
-                version=$(get_latest_version)
-                log_info "Latest version: $version"
-            fi
-            ensure_jarinker_available "$version"
-
-            # Then install to PATH
-            install_to_path
-            exit 0
-            ;;
-    esac
-
-    # If no arguments provided, install to PATH by default
-    if [[ $# -eq 0 ]]; then
-        log_info "No arguments provided. Installing jarinker to PATH..."
-        check_dependencies
-        local version="$JARINKER_VERSION"
-        if [[ "$version" == "latest" ]]; then
-            version=$(get_latest_version)
-            log_info "Latest version: $version"
-        fi
-        ensure_jarinker_available "$version"
-        install_to_path
-        exit 0
-    fi
-
-    # Parse script-specific arguments first
-    local remaining_args
-    remaining_args=$(parse_script_args "$@")
-
-    # Check dependencies
+    # Check dependencies first
     check_dependencies
 
     # Determine version to use
     local version="$JARINKER_VERSION"
-    if [[ "$version" == "latest" ]]; then
-        version=$(get_latest_version)
-        log_info "Latest version: $version"
-    fi
 
-    # Ensure jarinker is available
+    # Always ensure jarinker is available first
     local jarinker_bin
     jarinker_bin=$(ensure_jarinker_available "$version")
 
-    # Execute jarinker
+    # If no arguments provided, install to PATH after downloading
+    if [[ $# -eq 0 ]]; then
+        log_info "No arguments provided. Installing jarinker to PATH..."
+        install_to_path
+        exit 0
+    fi
+
+    # Parse script-specific arguments
+    local remaining_args
+    remaining_args=$(parse_script_args "$@")
+
+    # Execute jarinker with remaining arguments
     execute_jarinker "$jarinker_bin" $remaining_args
 }
 
