@@ -52,13 +52,21 @@ check_dependencies() {
     
     # Check Java version
     local java_version
-    java_version=$(java -version 2>&1 | head -n1 | cut -d'"' -f2 | cut -d'.' -f1)
-    if [[ "$java_version" -lt "$REQUIRED_JAVA_VERSION" ]]; then
-        log_error "Java $REQUIRED_JAVA_VERSION or later is required. Found Java $java_version."
+    java_version=$(java -version 2>&1 | awk -F'"' '/version/ {print $2}' | head -n1)
+
+    local java_major_version
+    if [[ "$java_version" == 1.* ]]; then
+        java_major_version=$(echo "$java_version" | cut -d'.' -f2)
+    else
+        java_major_version=$(echo "$java_version" | cut -d'.' -f1)
+    fi
+
+    if (( java_major_version < REQUIRED_JAVA_VERSION )); then
+        log_error "Java $REQUIRED_JAVA_VERSION or later is required. Found Java $java_major_version."
         exit 1
     fi
-    
-    log_success "Java $java_version found"
+
+    log_success "Java $java_major_version found"
 }
 
 # Download and extract jarinker
