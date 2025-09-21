@@ -6,16 +6,16 @@
 #
 # Install jarinker:
 #  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- install
-#  JARINKER_VERSION=v0.0.1 curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- install
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | JARINKER_VERSION=v0.0.1 bash -s -- install
 #
 # Uninstall jarinker:
 #  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- uninstall
-#  JARINKER_VERSION=v0.0.1 curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- uninstall
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | JARINKER_VERSION=v0.0.1 bash -s -- uninstall
 #
 # Execute jarinker:
 #  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- --help
 #  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- shrink --help
-#  JARINKER_VERSION=v0.0.1 curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- shrink --help
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | JARINKER_VERSION=v0.0.1 bash -s -- shrink --help
 
 set -euo pipefail
 
