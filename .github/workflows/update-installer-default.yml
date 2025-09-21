@@ -2,56 +2,29 @@ name: Update Installer Default Version
 
 on:
   release:
-    types:
-      - published
+    types: [ published ]
 
 jobs:
   update-installer-default:
-    name: Update Installer Default Version
     runs-on: ubuntu-latest
     permissions:
       contents: write
       pull-requests: write
     steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
-          fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
-      - name: Update default jarinker version
-        id: update_default
-        env:
-          VERSION_TAG: ${{ github.event.release.tag_name }}
+      - name: Update default version
         run: |
-          set -euo pipefail
-
-          script_file="scripts/jarinker"
-          replacement="${VERSION_TAG//\//\/}"
-
-          sed -Ei "s/(JARINKER_VERSION=\"\${JARINKER_VERSION:-)[^\"}]+/\1${replacement}/" "$script_file"
-
-          if git diff --quiet -- "$script_file"; then
-            echo "No installer changes required"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            git status --short
-            git diff --stat
-          fi
-
-          safe_tag=${VERSION_TAG//\//-}
-          echo "safe_tag=$safe_tag" >> "$GITHUB_OUTPUT"
+          version="${{ github.event.release.tag_name }}"
+          sed -Ei "s/^JARINKER_VERSION=.*/JARINKER_VERSION=\"\${JARINKER_VERSION:-${version}}\"/" scripts/jarinker
 
       - name: Create Pull Request
-        if: steps.update_default.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: update installer default version to ${{ github.event.release.tag_name }}"
-          branch: chore/update-installer-${{ steps.update_default.outputs.safe_tag }}
-          title: "chore: update installer default version to ${{ github.event.release.tag_name }}"
+          branch: update-installer-${{ github.event.release.tag_name }}
+          title: "Update installer default version to ${{ github.event.release.tag_name }}"
           body: |
-            ## Summary
-            - update the default version used by `scripts/jarinker` to `${{ github.event.release.tag_name }}`
-          base: ${{ github.event.repository.default_branch }}
+            Update `scripts/jarinker` default version to `${{ github.event.release.tag_name }}`
