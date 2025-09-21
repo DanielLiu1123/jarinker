@@ -21,7 +21,7 @@ import picocli.CommandLine.Parameters;
  *
  * @author Freeman
  */
-@Command(description = "Shrink artifacts by removing unused classes", mixinStandardHelpOptions = true)
+@Command(description = "Shrink jars by removing unused classes", mixinStandardHelpOptions = true)
 public class ShrinkCommand implements Runnable {
 
     @Parameters(description = "Source artifacts to shrink (JAR files or class directories)", arity = "1..*")
