@@ -13,8 +13,6 @@ readonly DEFAULT_CACHE_DIR="$HOME/.jarinker"
 # User configurable variables
 JARINKER_CACHE_DIR="${JARINKER_CACHE_DIR:-$DEFAULT_CACHE_DIR}"
 JARINKER_VERSION="${JARINKER_VERSION:-v0.0.1}"
-JARINKER_OFFLINE="${JARINKER_OFFLINE:-false}"
-JARINKER_VERBOSE="${JARINKER_VERBOSE:-false}"
 
 # Colors for output
 readonly RED='\033[0;31m'
@@ -40,6 +38,41 @@ log_success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1" >&2
 }
 
+# Remove a cached jarinker version
+uninstall_jarinker() {
+    local provided_version="$1"
+    local version
+    if [[ -n "$provided_version" ]]; then
+        version="$provided_version"
+    else
+        version="$JARINKER_VERSION"
+        log_info "No version specified; defaulting to $version"
+    fi
+
+    if [[ -z "$version" ]]; then
+        log_error "Unable to determine version to uninstall"
+        exit 1
+    fi
+
+    local cache_dir="$JARINKER_CACHE_DIR/versions/$version"
+
+    if [[ ! -d "$cache_dir" ]]; then
+        log_warn "No jarinker version found at $cache_dir"
+        return
+    fi
+
+    log_info "Removing cached jarinker $version..."
+
+    rm -rf "$cache_dir"
+
+    if [[ -d "$cache_dir" ]]; then
+        log_error "Failed to remove $cache_dir"
+        exit 1
+    fi
+
+    log_success "Removed jarinker $version"
+}
+
 # Check if required dependencies are available
 check_dependencies() {
     log_info "Checking Java version..."
@@ -59,6 +92,11 @@ check_dependencies() {
         java_major_version=$(echo "$java_version" | cut -d'.' -f2)
     else
         java_major_version=$(echo "$java_version" | cut -d'.' -f1)
+    fi
+
+    if [[ -z "$java_major_version" || ! "$java_major_version" =~ ^[0-9]+$ ]]; then
+        log_error "Unable to determine Java version (found: $java_version)"
+        exit 1
     fi
 
     if (( java_major_version < REQUIRED_JAVA_VERSION )); then
@@ -148,6 +186,13 @@ execute_jarinker() {
 # Main function
 main() {
     # Check dependencies first
+    if [[ $# -ge 1 && "$1" == "uninstall" ]]; then
+        shift
+        local uninstall_version_arg="${1:-}"
+        uninstall_jarinker "$uninstall_version_arg"
+        exit 0
+    fi
+
     check_dependencies
 
     # Determine version to use
