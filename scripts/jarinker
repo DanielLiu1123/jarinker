@@ -1,7 +1,21 @@
 #!/bin/bash
 
 # Jarinker Remote Execution Script
-# Usage: curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- [jarinker-args]
+#
+# Usage:
+#
+# Install jarinker:
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- install
+#  JARINKER_VERSION=v0.0.1 curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- install
+#
+# Uninstall jarinker:
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- uninstall
+#  JARINKER_VERSION=v0.0.1 curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- uninstall
+#
+# Execute jarinker:
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- --help
+#  curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- shrink --help
+#  JARINKER_VERSION=v0.0.1 curl https://raw.githubusercontent.com/DanielLiu1123/jarinker/main/scripts/jarinker | bash -s -- shrink --help
 
 set -euo pipefail
 
@@ -71,6 +85,35 @@ uninstall_jarinker() {
     fi
 
     log_success "Removed jarinker $version"
+}
+
+# Download and configure jarinker without executing it
+install_jarinker() {
+    local provided_version="$1"
+    local version
+    if [[ -n "$provided_version" ]]; then
+        version="$provided_version"
+    else
+        version="$JARINKER_VERSION"
+        log_info "No version specified; defaulting to $version"
+    fi
+
+    if [[ -z "$version" ]]; then
+        log_error "Unable to determine version to install"
+        exit 1
+    fi
+
+    local jarinker_bin
+    jarinker_bin=$(ensure_jarinker_available "$version")
+
+    if [[ -z "$jarinker_bin" ]]; then
+        log_error "Failed to install jarinker $version"
+        exit 1
+    fi
+
+    log_success "jarinker $version installed, run following command to get started:
+
+  $jarinker_bin --help"
 }
 
 # Check if required dependencies are available
@@ -185,14 +228,25 @@ execute_jarinker() {
 
 # Main function
 main() {
-    # Check dependencies first
-    if [[ $# -ge 1 && "$1" == "uninstall" ]]; then
-        shift
-        local uninstall_version_arg="${1:-}"
-        uninstall_jarinker "$uninstall_version_arg"
-        exit 0
+    # Handle special commands for script
+    if [[ $# -ge 1 ]]; then
+        case "$1" in
+            install)
+                shift
+                local install_version_arg="${1:-}"
+                install_jarinker "$install_version_arg"
+                exit 0
+                ;;
+            uninstall)
+                shift
+                local uninstall_version_arg="${1:-}"
+                uninstall_jarinker "$uninstall_version_arg"
+                exit 0
+                ;;
+        esac
     fi
 
+    # Check dependencies first
     check_dependencies
 
     # Determine version to use
