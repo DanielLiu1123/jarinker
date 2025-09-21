@@ -115,8 +115,6 @@ install_jarinker() {
 
   $jarinker_bin --help
   "
-
-    echo "$jarinker_bin"
 }
 
 # Check if required dependencies are available
@@ -256,7 +254,7 @@ main() {
 
     # Always ensure jarinker is available first
     local jarinker_bin
-    jarinker_bin=$(install_jarinker "$version")
+    jarinker_bin=$(ensure_jarinker_available "$version")
 
     # Execute jarinker with remaining arguments
     execute_jarinker "$jarinker_bin" "$@"
